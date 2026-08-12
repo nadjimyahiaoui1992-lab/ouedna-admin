@@ -41,7 +41,8 @@ class _FeedbackTabState extends State<FeedbackTab> {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: Text('تعذر تحميل الآراء والملاحظات. يرجى التحقق من الاتصال والصلاحيات.'),
+              child: Text(
+                  'تعذر تحميل الآراء والملاحظات. يرجى التحقق من الاتصال والصلاحيات.'),
             ),
           );
         }

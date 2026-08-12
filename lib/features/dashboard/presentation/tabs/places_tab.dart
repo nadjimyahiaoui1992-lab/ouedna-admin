@@ -100,11 +100,13 @@ class _PlacesTabState extends State<PlacesTab> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.edit_rounded, color: Colors.blue),
+                        icon:
+                            const Icon(Icons.edit_rounded, color: Colors.blue),
                         onPressed: () => _openPlaceForm(place),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_rounded, color: Colors.red),
+                        icon:
+                            const Icon(Icons.delete_rounded, color: Colors.red),
                         onPressed: () => _deletePlace(place['id'].toString()),
                       ),
                     ],

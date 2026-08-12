@@ -53,10 +53,12 @@ class _MemoriesTabState extends State<MemoriesTab> {
                     decoration: const InputDecoration(labelText: 'العنوان')),
                 TextField(
                     controller: subtitleController,
-                    decoration: const InputDecoration(labelText: 'العنوان الفرعي')),
+                    decoration:
+                        const InputDecoration(labelText: 'العنوان الفرعي')),
                 TextField(
                     controller: imageController,
-                    decoration: const InputDecoration(labelText: 'رابط الصورة')),
+                    decoration:
+                        const InputDecoration(labelText: 'رابط الصورة')),
                 TextField(
                     controller: descController,
                     decoration: const InputDecoration(labelText: 'الوصف'),

@@ -48,7 +48,8 @@ class _TestimonialsTabState extends State<TestimonialsTab> {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(24),
-              child: Text('تعذر تحميل تجارب الزوار. يرجى التحقق من الاتصال والصلاحيات.'),
+              child: Text(
+                  'تعذر تحميل تجارب الزوار. يرجى التحقق من الاتصال والصلاحيات.'),
             ),
           );
         }
@@ -62,7 +63,8 @@ class _TestimonialsTabState extends State<TestimonialsTab> {
           itemBuilder: (context, index) {
             final item = items[index];
             final status = item['status'] ?? 'pending';
-            final photos = item['photos'] is List ? item['photos'] as List : const [];
+            final photos =
+                item['photos'] is List ? item['photos'] as List : const [];
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
               child: ListTile(

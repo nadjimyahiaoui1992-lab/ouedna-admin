@@ -74,17 +74,17 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                       ),
                       const SizedBox(height: 16),
                       const Text(
-                        'لوحة تحكم Souf 360',
+                        'ALGERIA 360 AI • Admin',
                         style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF193F38)),
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'تسجيل دخول المشرفين لإدارة المعالم والمحتوى',
+                        'إدارة الوجهات الوطنية، معالم Souf360، ومحتوى المجتمع',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: Colors.grey, fontSize: 13),
                       ),
                       const SizedBox(height: 24),
                       if (_errorMessage != null) ...[
@@ -133,9 +133,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                           child: _isLoading
                               ? const CircularProgressIndicator(
                                   color: Colors.white)
-                          : const Text('دخول لوحة التحكم',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold)),
+                              : const Text('دخول لوحة التحكم',
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
