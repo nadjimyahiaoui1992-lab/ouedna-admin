@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.souf360.souf_admin"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
