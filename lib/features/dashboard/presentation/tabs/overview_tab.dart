@@ -209,13 +209,15 @@ class _CommandCenter extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2,
+          GridView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.42,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              mainAxisExtent: 154,
+            ),
             children: [
               _MetricCard(
                 label: 'إجمالي المعالم',

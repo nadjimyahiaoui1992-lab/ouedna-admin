@@ -349,6 +349,20 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
     }
   }
 
+  String _statusDescription() {
+    switch (_status) {
+      case 'قيد المراجعة':
+        return 'يظهر في لوحة الإدارة فقط حتى تتم الموافقة عليه.';
+      case 'مسودة':
+        return 'محفوظ في الإدارة ولا يظهر للزوار.';
+      case 'مرفوض':
+        return 'لا يظهر للزوار ويبقى موثقاً في سجل الإدارة.';
+      case 'منشور':
+      default:
+        return 'يظهر مباشرة لتطبيق الزوار بعد الحفظ.';
+    }
+  }
+
   String? _nullableText(TextEditingController controller) {
     final value = controller.text.trim();
     return value.isEmpty ? null : value;
@@ -378,6 +392,8 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final existingImage = _stringValue(widget.place?['image_url']);
+    final dialogWidth =
+        (MediaQuery.sizeOf(context).width - 72).clamp(260.0, 620.0).toDouble();
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -404,7 +420,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
           ],
         ),
         content: SizedBox(
-          width: 620,
+          width: dialogWidth,
           child: SingleChildScrollView(
             child: Form(
               key: _formKey,
@@ -618,29 +634,29 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: _status,
+                    isExpanded: true,
                     decoration:
                         _decoration('حالة المعلم', Icons.visibility_outlined),
                     items: const [
-                      DropdownMenuItem(
-                        value: 'منشور',
-                        child: Text('منشور — يظهر للزوار فوراً'),
-                      ),
+                      DropdownMenuItem(value: 'منشور', child: Text('منشور')),
                       DropdownMenuItem(
                         value: 'قيد المراجعة',
-                        child: Text('قيد المراجعة — بانتظار اعتماد الإدارة'),
+                        child: Text('قيد المراجعة'),
                       ),
-                      DropdownMenuItem(
-                        value: 'مسودة',
-                        child: Text('مسودة — مخفي عن الزوار'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'مرفوض',
-                        child: Text('مرفوض — لا يظهر للزوار'),
-                      ),
+                      DropdownMenuItem(value: 'مسودة', child: Text('مسودة')),
+                      DropdownMenuItem(value: 'مرفوض', child: Text('مرفوض')),
                     ],
                     onChanged: _isLoading
                         ? null
                         : (value) => setState(() => _status = value ?? 'منشور'),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _statusDescription(),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),

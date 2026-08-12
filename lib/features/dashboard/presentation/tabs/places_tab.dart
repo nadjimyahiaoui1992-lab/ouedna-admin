@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,11 +15,43 @@ class PlacesTab extends StatefulWidget {
 class _PlacesTabState extends State<PlacesTab> {
   late Future<List<Map<String, dynamic>>> _placesFuture;
   String? _statusFilter;
+  RealtimeChannel? _placesChannel;
+  Timer? _reloadDebounce;
 
   @override
   void initState() {
     super.initState();
     _loadPlaces();
+    _subscribeToPlaceChanges();
+  }
+
+  @override
+  void dispose() {
+    _reloadDebounce?.cancel();
+    if (_placesChannel != null) {
+      Supabase.instance.client.removeChannel(_placesChannel!);
+    }
+    super.dispose();
+  }
+
+  void _subscribeToPlaceChanges() {
+    _placesChannel = Supabase.instance.client
+        .channel('souf-admin-places-${DateTime.now().microsecondsSinceEpoch}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'places',
+          callback: (_) => _queueRefresh(),
+        )
+        .subscribe();
+  }
+
+  void _queueRefresh() {
+    _reloadDebounce?.cancel();
+    _reloadDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      setState(_loadPlaces);
+    });
   }
 
   void _loadPlaces() {

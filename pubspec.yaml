@@ -2,7 +2,7 @@ name: souf_admin
 description: "لوحة التحكم الرسمية لمنظومة Souf 360 لإدارة المعالم ومحتوى المجتمع."
 publish_to: 'none'
 
-version: 1.1.1+4
+version: 1.1.2+5
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
