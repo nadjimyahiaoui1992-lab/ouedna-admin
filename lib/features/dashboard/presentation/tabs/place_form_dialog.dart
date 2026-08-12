@@ -617,7 +617,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
                   ],
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
-                    value: _status == 'مسودة' ? 'مسودة' : 'منشور',
+                    value: _status,
                     decoration:
                         _decoration('حالة المعلم', Icons.visibility_outlined),
                     items: const [
@@ -626,8 +626,16 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
                         child: Text('منشور — يظهر للزوار فوراً'),
                       ),
                       DropdownMenuItem(
+                        value: 'قيد المراجعة',
+                        child: Text('قيد المراجعة — بانتظار اعتماد الإدارة'),
+                      ),
+                      DropdownMenuItem(
                         value: 'مسودة',
                         child: Text('مسودة — مخفي عن الزوار'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'مرفوض',
+                        child: Text('مرفوض — لا يظهر للزوار'),
                       ),
                     ],
                     onChanged: _isLoading
