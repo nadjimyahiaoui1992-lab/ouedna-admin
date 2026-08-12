@@ -77,7 +77,9 @@ class _OverviewTabState extends State<OverviewTab> {
 
   void _reload() {
     if (!mounted) return;
-    setState(() => _snapshotFuture = _loadSnapshot());
+    setState(() {
+      _snapshotFuture = _loadSnapshot();
+    });
   }
 
   Future<void> _refresh() async {
