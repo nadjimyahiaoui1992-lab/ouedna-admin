@@ -1,8 +1,8 @@
 name: souf_admin
-description: "لوحة التحكم الرسمية لتطبيق وموقع Souf 360 لإدارة المعالم والمحتوى."
+description: "لوحة التحكم الرسمية لمنظومة Souf 360 لإدارة المعالم ومحتوى المجتمع."
 publish_to: 'none'
 
-version: 1.0.1+2
+version: 1.1.0+3
 
 environment:
   sdk: ">=3.5.0 <4.0.0"
