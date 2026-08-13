@@ -153,9 +153,17 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
       Navigator.pop(context, true);
     } catch (error) {
       if (mounted) {
+        final details = error.toString();
+        final firebaseMissing =
+            details.contains('push_provider_not_configured');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم حفظ الإصدار، لكن تعذر إرسال الإشعار: $error'),
+            duration: const Duration(seconds: 6),
+            content: Text(
+              firebaseMissing
+                  ? 'تم حفظ الإصدار ونشره داخل مركز إشعارات وادنا. الإشعار الفوري غير مفعّل بعد لأن إعداد Firebase الخلفي غير مكتمل.'
+                  : 'تم حفظ الإصدار، لكن تعذر إرسال الإشعار: $error',
+            ),
           ),
         );
       }
