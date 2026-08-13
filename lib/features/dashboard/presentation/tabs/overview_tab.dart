@@ -62,6 +62,18 @@ class _OverviewTabState extends State<OverviewTab> {
           table: 'testimonials',
           callback: (_) => _queueReload(),
         )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'feedback',
+          callback: (_) => _queueReload(),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'suggestions',
+          callback: (_) => _queueReload(),
+        )
         .subscribe();
   }
 
@@ -91,6 +103,7 @@ class _OverviewTabState extends State<OverviewTab> {
       client.from('testimonials').select('id,status'),
       client.from('memories').select('id'),
       client.from('feedback').select('id'),
+      client.from('suggestions').select('id,status'),
     ]);
 
     stopwatch.stop();
@@ -99,6 +112,12 @@ class _OverviewTabState extends State<OverviewTab> {
     final testimonials = (responses[1] as List);
     final memoriesCount = (responses[2] as List).length;
     final feedbackCount = (responses[3] as List).length;
+    final inquiries = (responses[4] as List);
+    final pendingInquiries = inquiries
+        .where((item) =>
+            item['status']?.toString() == 'new' ||
+            item['status']?.toString() == 'in_review')
+        .length;
 
     return _AdminSnapshot(
       totalPlaces: places.length,
@@ -110,6 +129,7 @@ class _OverviewTabState extends State<OverviewTab> {
           .length,
       memories: memoriesCount,
       feedback: feedbackCount,
+      pendingInquiries: pendingInquiries,
       latency: stopwatch.elapsed,
       refreshedAt: DateTime.now(),
       accountEmail: client.auth.currentUser?.email ?? 'مدير النظام',
@@ -148,6 +168,7 @@ class _AdminSnapshot {
     required this.pendingTestimonials,
     required this.memories,
     required this.feedback,
+    required this.pendingInquiries,
     required this.latency,
     required this.refreshedAt,
     required this.accountEmail,
@@ -159,6 +180,7 @@ class _AdminSnapshot {
   final int pendingTestimonials;
   final int memories;
   final int feedback;
+  final int pendingInquiries;
   final Duration latency;
   final DateTime refreshedAt;
   final String accountEmail;
@@ -382,12 +404,13 @@ class _DashboardView extends StatelessWidget {
           isAlert: snapshot.pendingTestimonials > 0,
         ),
         _MetricCard(
-          title: 'التفاعل العام',
-          value: (snapshot.feedback + snapshot.memories).toString(),
-          icon: Icons.auto_graph_rounded,
+          title: 'صوت الزوار',
+          value: (snapshot.feedback + snapshot.pendingInquiries).toString(),
+          icon: Icons.forum_rounded,
           color: const Color(0xFF7C3AED),
-          trend: 'آراء وذكريات',
+          trend: '${snapshot.pendingInquiries} رسالة بانتظار المتابعة',
           onTap: () => onOpenSection(4),
+          isAlert: snapshot.pendingInquiries > 0,
         ),
       ],
     );
@@ -405,11 +428,11 @@ class _DashboardView extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _ActionTile(
-          title: 'مراجعة آراء المجتمع',
-          subtitle: 'إدارة التعليقات والتجارب المنشورة',
-          icon: Icons.people_alt_rounded,
-          color: const Color(0xFFD9A441),
-          onTap: () => onOpenSection(2),
+          title: 'مراجعة صوت الزوار',
+          subtitle: 'التقييمات بالملاحظات، الاقتراحات والأسئلة',
+          icon: Icons.mark_unread_chat_alt_rounded,
+          color: const Color(0xFF7C3AED),
+          onTap: () => onOpenSection(4),
         ),
       ],
     );

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'tabs/announcement_composer_dialog.dart';
-import 'tabs/feedback_tab.dart';
 import 'tabs/memories_tab.dart';
 import 'tabs/overview_tab.dart';
 import 'tabs/places_tab.dart';
 import 'tabs/testimonials_tab.dart';
 import 'tabs/update_management_dialog.dart';
+import 'tabs/visitor_inbox_tab.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -24,7 +24,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     const PlacesTab(),
     const TestimonialsTab(),
     const MemoriesTab(),
-    const FeedbackTab(),
+    const VisitorInboxTab(),
   ];
 
   void _selectTab(int index) {
@@ -164,7 +164,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               _buildNavDestination(Icons.auto_stories_outlined,
                   Icons.auto_stories_rounded, 'الذكريات'),
               _buildNavDestination(
-                  Icons.forum_outlined, Icons.forum_rounded, 'الآراء'),
+                  Icons.forum_outlined, Icons.forum_rounded, 'صوت الزوار'),
             ],
           ),
         ),
