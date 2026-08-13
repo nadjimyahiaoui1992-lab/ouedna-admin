@@ -11,7 +11,6 @@ class UpdateManagementDialog extends StatefulWidget {
 class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
   final _formKey = GlobalKey<FormState>();
   final _version = TextEditingController();
-  final _storeUrl = TextEditingController();
   final _directApkUrl = TextEditingController();
   final _sha256 = TextEditingController();
   final _notes = TextEditingController();
@@ -30,7 +29,6 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
   @override
   void dispose() {
     _version.dispose();
-    _storeUrl.dispose();
     _directApkUrl.dispose();
     _sha256.dispose();
     _notes.dispose();
@@ -44,14 +42,13 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
       final row = await Supabase.instance.client
           .from('app_config')
           .select(
-            'latest_version, force_update, android_store_url, direct_apk_url, apk_sha256, release_notes',
+            'latest_version, force_update, direct_apk_url, apk_sha256, release_notes',
           )
           .eq('id', 1)
           .maybeSingle();
       if (row != null) {
         _version.text = row['latest_version']?.toString() ?? '';
         _forceUpdate = row['force_update'] == true;
-        _storeUrl.text = row['android_store_url']?.toString() ?? '';
         _directApkUrl.text = row['direct_apk_url']?.toString() ?? '';
         _sha256.text = row['apk_sha256']?.toString() ?? '';
         _notes.text = row['release_notes']?.toString() ?? '';
@@ -76,9 +73,9 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
       'id': 1,
       'latest_version': _version.text.trim(),
       'force_update': _forceUpdate,
-      'android_store_url': _emptyToNull(_storeUrl.text),
-      'direct_apk_url': _emptyToNull(_directApkUrl.text),
-      'apk_sha256': _emptyToNull(_sha256.text)?.toLowerCase(),
+      'android_store_url': null,
+      'direct_apk_url': _directApkUrl.text.trim(),
+      'apk_sha256': _sha256.text.trim().toLowerCase(),
       'release_notes': _emptyToNull(_notes.text),
     });
   }
@@ -93,7 +90,7 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
         Navigator.pop(context, true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ إعدادات الإصدار.')),
+          const SnackBar(content: Text('تم حفظ إعدادات الإصدار المباشر.')),
         );
       }
     } catch (error) {
@@ -137,25 +134,22 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
       final data = result.data;
       final sent = data is Map ? data['sent'] ?? 0 : 0;
       final failures = data is Map ? data['failures'] ?? 0 : 0;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              failures == 0
-                  ? 'تم إرسال إشعار التحديث إلى $sent جهازاً.'
-                  : 'تم الإرسال إلى $sent جهازاً، وتعذر الإرسال إلى $failures جهازاً.',
-            ),
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            failures == 0
+                ? 'تم إرسال إشعار التحديث إلى $sent جهازاً.'
+                : 'تم الإرسال إلى $sent جهازاً، وتعذر الإرسال إلى $failures جهازاً.',
           ),
-        );
-        Navigator.pop(context, true);
-      }
+        ),
+      );
+      Navigator.pop(context, true);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'تم حفظ الإصدار، لكن تعذر إرسال الإشعار: $error',
-            ),
+            content: Text('تم حفظ الإصدار، لكن تعذر إرسال الإشعار: $error'),
           ),
         );
       }
@@ -169,9 +163,9 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
     return result.isEmpty ? null : result;
   }
 
-  String? _urlValidator(String? value) {
+  String? _requiredUrlValidator(String? value) {
     final text = value?.trim() ?? '';
-    if (text.isEmpty) return null;
+    if (text.isEmpty) return 'رابط APK مطلوب.';
     final uri = Uri.tryParse(text);
     return uri != null && uri.scheme == 'https'
         ? null
@@ -183,229 +177,151 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
         textDirection: TextDirection.rtl,
         child: Dialog(
           insetPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
-          child: SizedBox(
-            width: 560,
-            height: MediaQuery.sizeOf(context).height * .88,
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : Column(
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF193F38),
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(28),
-                          ),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.system_update_alt_rounded,
-                              color: Colors.white,
-                            ),
-                            SizedBox(width: 12),
-                            Text(
-                              'إدارة تحديث التطبيق',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(20),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                const Text(
-                                  'تحديث المتجر',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF193F38),
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 620),
+            child: SizedBox(
+              height: MediaQuery.sizeOf(context).height * .88,
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Column(
+                      children: [
+                        const _DialogHeader(),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 18, 16, 20),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const _SectionTitle(
+                                    icon: Icons.install_mobile_outlined,
+                                    title: 'توزيع APK مباشر',
                                   ),
-                                ),
-                                const SizedBox(height: 10),
-                                TextFormField(
-                                  controller: _version,
-                                  validator: (value) =>
-                                      value == null || value.trim().isEmpty
-                                          ? 'الإصدار مطلوب.'
-                                          : null,
-                                  decoration: _input(
-                                    'رقم الإصدار الجديد، مثال: 1.7.1',
-                                    Icons.numbers_rounded,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _storeUrl,
-                                  validator: _urlValidator,
-                                  keyboardType: TextInputType.url,
-                                  decoration: _input(
-                                    'رابط صفحة Google Play (HTTPS)',
-                                    Icons.storefront_outlined,
-                                  ),
-                                ),
-                                const SizedBox(height: 22),
-                                const Text(
-                                  'توزيع APK مباشر موثّق',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF193F38),
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                const Text(
-                                  'استخدمه فقط للإصدار المباشر خارج Google Play. لا تضع ملفاً دون بصمة SHA-256 مطابقة.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    height: 1.4,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _directApkUrl,
-                                  validator: _urlValidator,
-                                  keyboardType: TextInputType.url,
-                                  decoration: _input(
-                                    'رابط APK آمن (HTTPS)',
-                                    Icons.download_outlined,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _sha256,
-                                  validator: (value) {
-                                    final valueText = value?.trim() ?? '';
-                                    if (_directApkUrl.text.trim().isEmpty &&
-                                        valueText.isEmpty) {
-                                      return null;
-                                    }
-                                    return RegExp(r'^[a-fA-F0-9]{64}$')
-                                            .hasMatch(valueText)
-                                        ? null
-                                        : 'أدخل بصمة SHA-256 من 64 رمزاً.';
-                                  },
-                                  decoration: _input(
-                                    'بصمة SHA-256 للـ APK',
-                                    Icons.verified_user_outlined,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _notes,
-                                  maxLines: 3,
-                                  decoration: _input(
-                                    'ملاحظات الإصدار',
-                                    Icons.notes_outlined,
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                                SwitchListTile.adaptive(
-                                  contentPadding: EdgeInsets.zero,
-                                  value: _forceUpdate,
-                                  onChanged: (value) =>
-                                      setState(() => _forceUpdate = value),
-                                  title: const Text(
-                                    'وضع التحديث المهم',
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'وادنا يوزّع خارج Google Play. ضع رابط ملف APK النهائي فقط، ثم أضف بصمة SHA-256 لحماية المستخدم قبل التثبيت.',
                                     style: TextStyle(
-                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                      height: 1.45,
+                                      color: Colors.black54,
                                     ),
                                   ),
-                                  subtitle: const Text(
-                                    'يعرض تنبيهاً واضحاً عند توفر الإصدار الجديد؛ لا يثبت أي شيء دون تأكيد المستخدم.',
+                                  const SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _version,
+                                    textDirection: TextDirection.ltr,
+                                    textAlign: TextAlign.left,
+                                    keyboardType: TextInputType.text,
+                                    validator: (value) =>
+                                        value == null || value.trim().isEmpty
+                                            ? 'رقم الإصدار مطلوب.'
+                                            : null,
+                                    decoration: _input(
+                                      'رقم الإصدار، مثال: 1.7.3',
+                                      Icons.numbers_rounded,
+                                    ),
                                   ),
-                                ),
-                                const Divider(height: 34),
-                                const Text(
-                                  'إشعار المستخدمين بالتحديث',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF193F38),
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _directApkUrl,
+                                    textDirection: TextDirection.ltr,
+                                    textAlign: TextAlign.left,
+                                    validator: _requiredUrlValidator,
+                                    keyboardType: TextInputType.url,
+                                    decoration: _input(
+                                      'رابط تحميل APK الآمن (HTTPS)',
+                                      Icons.download_for_offline_outlined,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 6),
-                                const Text(
-                                  'بعد الحفظ، يرسل هذا الإجراء إشعاراً للأجهزة التي وافقت على تلقي التنبيهات. الضغط على الإشعار يفتح مركز التحديث داخل وادنا.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    height: 1.4,
-                                    color: Colors.black54,
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _sha256,
+                                    textDirection: TextDirection.ltr,
+                                    textAlign: TextAlign.left,
+                                    maxLength: 64,
+                                    validator: (value) =>
+                                        RegExp(r'^[a-fA-F0-9]{64}$')
+                                                .hasMatch(value?.trim() ?? '')
+                                            ? null
+                                            : 'أدخل بصمة SHA-256 من 64 رمزاً.',
+                                    decoration: _input(
+                                      'بصمة SHA-256 للـ APK',
+                                      Icons.verified_user_outlined,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextFormField(
-                                  controller: _notificationTitle,
-                                  maxLength: 120,
-                                  decoration: _input(
-                                    'عنوان الإشعار',
-                                    Icons.notifications_active_outlined,
+                                  const SizedBox(height: 4),
+                                  TextFormField(
+                                    controller: _notes,
+                                    maxLines: 3,
+                                    decoration: _input(
+                                      'ملاحظات الإصدار التي يراها المستخدم',
+                                      Icons.notes_outlined,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                TextFormField(
-                                  controller: _notificationBody,
-                                  maxLength: 500,
-                                  maxLines: 3,
-                                  decoration: _input(
-                                    'نص الإشعار',
-                                    Icons.message_outlined,
+                                  const SizedBox(height: 8),
+                                  SwitchListTile.adaptive(
+                                    contentPadding: EdgeInsets.zero,
+                                    value: _forceUpdate,
+                                    onChanged: (value) =>
+                                        setState(() => _forceUpdate = value),
+                                    title: const Text(
+                                      'تحديث مهم',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w800),
+                                    ),
+                                    subtitle: const Text(
+                                      'يمنع تأجيل نافذة التحديث، لكنه لا يثبت APK دون تأكيد المستخدم في أندرويد.',
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const Divider(height: 32),
+                                  const _SectionTitle(
+                                    icon: Icons.notifications_active_outlined,
+                                    title: 'إشعار المستخدمين بالتحديث',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'عند الحفظ والإرسال، يصل تنبيه للأجهزة التي وافقت على الإشعارات. الضغط عليه يفتح مركز التحديث داخل وادنا.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      height: 1.45,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _notificationTitle,
+                                    maxLength: 120,
+                                    decoration: _input(
+                                      'عنوان الإشعار',
+                                      Icons.notifications_active_outlined,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  TextFormField(
+                                    controller: _notificationBody,
+                                    maxLength: 500,
+                                    maxLines: 3,
+                                    decoration: _input(
+                                      'نص الإشعار',
+                                      Icons.message_outlined,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _saving
-                                    ? null
-                                    : () => Navigator.pop(context),
-                                child: const Text('إلغاء'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _saving
-                                    ? null
-                                    : () => _save(closeAfterSave: false),
-                                child: const Text('حفظ فقط'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              flex: 2,
-                              child: FilledButton.icon(
-                                onPressed: _saving ? null : _saveAndNotify,
-                                icon: const Icon(Icons.send_rounded),
-                                label: Text(
-                                  _saving
-                                      ? 'جارٍ الإرسال...'
-                                      : 'حفظ وإرسال إشعار',
-                                ),
-                              ),
-                            ),
-                          ],
+                        _ResponsiveActions(
+                          saving: _saving,
+                          onCancel: () => Navigator.pop(context),
+                          onSave: () => _save(closeAfterSave: false),
+                          onSaveAndNotify: _saveAndNotify,
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+            ),
           ),
         ),
       );
@@ -416,5 +332,124 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+      );
+}
+
+class _DialogHeader extends StatelessWidget {
+  const _DialogHeader();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: const BoxDecoration(
+          color: Color(0xFF193F38),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.system_update_alt_rounded, color: Colors.white),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'إدارة تحديث APK المباشر',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Icon(icon, color: const Color(0xFF193F38)),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF193F38),
+            ),
+          ),
+        ],
+      );
+}
+
+class _ResponsiveActions extends StatelessWidget {
+  const _ResponsiveActions({
+    required this.saving,
+    required this.onCancel,
+    required this.onSave,
+    required this.onSaveAndNotify,
+  });
+
+  final bool saving;
+  final VoidCallback onCancel;
+  final VoidCallback onSave;
+  final VoidCallback onSaveAndNotify;
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final notifyButton = FilledButton.icon(
+                onPressed: saving ? null : onSaveAndNotify,
+                icon: const Icon(Icons.send_rounded),
+                label: Text(saving ? 'جارٍ الإرسال...' : 'حفظ وإرسال إشعار'),
+              );
+              final saveButton = OutlinedButton(
+                onPressed: saving ? null : onSave,
+                child: const Text('حفظ فقط'),
+              );
+              final cancelButton = TextButton(
+                onPressed: saving ? null : onCancel,
+                child: const Text('إلغاء'),
+              );
+
+              if (constraints.maxWidth < 440) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: 48, child: notifyButton),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: saveButton),
+                        const SizedBox(width: 8),
+                        Expanded(child: cancelButton),
+                      ],
+                    ),
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: cancelButton),
+                  const SizedBox(width: 8),
+                  Expanded(child: saveButton),
+                  const SizedBox(width: 8),
+                  Expanded(flex: 2, child: notifyButton),
+                ],
+              );
+            },
+          ),
+        ),
       );
 }
