@@ -25,14 +25,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     const FeedbackTab(),
   ];
 
-  static const _sectionTitles = [
-    'مركز القيادة',
-    'إدارة المعالم',
-    'تجارب الزوار',
-    'الذاكرة والتراث',
-    'آراء الزوار',
-  ];
-
   void _selectTab(int index) {
     if (index < 0 || index >= _tabs.length) return;
     setState(() => _currentIndex = index);
@@ -40,79 +32,111 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userEmail = Supabase.instance.client.auth.currentUser?.email;
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
+        backgroundColor: const Color(0xFFF7F8F5),
         appBar: AppBar(
-          toolbarHeight: 70,
-          titleSpacing: 18,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          backgroundColor: Colors.white,
+          foregroundColor: const Color(0xFF193F38),
+          elevation: 0,
+          toolbarHeight: 75,
+          title: Row(
             children: [
-              const Text(
-                'Souf 360 Admin',
-                style: TextStyle(fontWeight: FontWeight.w900),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF193F38).withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.admin_panel_settings_rounded,
+                    color: Color(0xFF193F38)),
               ),
-              Text(
-                _sectionTitles[_currentIndex],
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              const SizedBox(width: 12),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Souf 360',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                        letterSpacing: -0.5),
+                  ),
+                  Text(
+                    'نظام الإدارة المركزي',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF64748B)),
+                  ),
+                ],
               ),
             ],
           ),
           actions: [
-            if (userEmail != null)
-              Padding(
-                padding: const EdgeInsetsDirectional.only(end: 2),
-                child: Tooltip(
-                  message: userEmail,
-                  child: const Icon(Icons.verified_user_outlined, size: 21),
-                ),
-              ),
             IconButton(
-              icon: const Icon(Icons.logout_rounded),
-              tooltip: 'تسجيل الخروج',
               onPressed: () async {
                 await Supabase.instance.client.auth.signOut();
               },
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.logout_rounded,
+                    color: Color(0xFFDC2626), size: 20),
+              ),
             ),
+            const SizedBox(width: 8),
           ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(color: const Color(0xFFE2EAE5), height: 1),
+          ),
         ),
         body: IndexedStack(index: _currentIndex, children: _tabs),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _currentIndex,
-          onDestinationSelected: _selectTab,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.space_dashboard_outlined),
-              selectedIcon: Icon(Icons.space_dashboard_rounded),
-              label: 'الرئيسية',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.place_outlined),
-              selectedIcon: Icon(Icons.place_rounded),
-              label: 'المعالم',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.rate_review_outlined),
-              selectedIcon: Icon(Icons.rate_review_rounded),
-              label: 'التجارب',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.history_edu_outlined),
-              selectedIcon: Icon(Icons.history_edu_rounded),
-              label: 'الذكريات',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.feedback_outlined),
-              selectedIcon: Icon(Icons.feedback_rounded),
-              label: 'الآراء',
-            ),
-          ],
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5)),
+            ],
+          ),
+          child: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: _selectTab,
+            backgroundColor: Colors.white,
+            indicatorColor: const Color(0xFF193F38).withOpacity(0.08),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            height: 70,
+            destinations: [
+              _buildNavDestination(Icons.dashboard_outlined,
+                  Icons.dashboard_rounded, 'الرئيسية'),
+              _buildNavDestination(
+                  Icons.map_outlined, Icons.map_rounded, 'المعالم'),
+              _buildNavDestination(
+                  Icons.reviews_outlined, Icons.reviews_rounded, 'التجارب'),
+              _buildNavDestination(Icons.auto_stories_outlined,
+                  Icons.auto_stories_rounded, 'الذكريات'),
+              _buildNavDestination(
+                  Icons.forum_outlined, Icons.forum_rounded, 'الآراء'),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  NavigationDestination _buildNavDestination(
+      IconData icon, IconData selectedIcon, String label) {
+    return NavigationDestination(
+      icon: Icon(icon, color: const Color(0xFF64748B)),
+      selectedIcon: Icon(selectedIcon, color: const Color(0xFF193F38)),
+      label: label,
     );
   }
 }

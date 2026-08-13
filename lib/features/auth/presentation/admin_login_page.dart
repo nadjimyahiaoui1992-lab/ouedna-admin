@@ -28,12 +28,12 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
 
       if (response.session == null) {
         setState(() {
-          _errorMessage = 'فشل تسجيل الدخول. تحقق من البريد وكلمة المرور.';
+          _errorMessage = 'فشل تسجيل الدخول. تحقق من البيانات.';
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'خطأ: ${e.toString()}';
+        _errorMessage = 'خطأ في المصادقة: ${e.toString()}';
       });
     } finally {
       if (mounted) {
@@ -49,94 +49,206 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
+        backgroundColor: const Color(0xFFF7F8F5),
+        body: Stack(
+          children: [
+            // Decorative background elements
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF193F38).withOpacity(0.05),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Logo & Branding
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        width: 100,
+                        height: 100,
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF193F38).withOpacity(0.1),
-                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF193F38).withOpacity(0.08),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
                         child: const Icon(Icons.admin_panel_settings_rounded,
-                            size: 56, color: Color(0xFF193F38)),
+                            size: 60, color: Color(0xFF193F38)),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 28),
                       const Text(
-                        'ALGERIA 360 AI • Admin',
+                        'Souf 360 Admin',
                         style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF193F38)),
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF193F38),
+                          letterSpacing: -0.5,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'إدارة الوجهات الوطنية، معالم Souf360، ومحتوى المجتمع',
+                        'لوحة التحكم المركزية • إدارة الوجهات والمجتمع',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
-                      ),
-                      const SizedBox(height: 24),
-                      if (_errorMessage != null) ...[
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.shade200),
-                          ),
-                          child: Text(_errorMessage!,
-                              style: const TextStyle(color: Colors.red)),
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(height: 16),
-                      ],
-                      TextField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'البريد الإلكتروني للأدمن',
-                          prefixIcon: Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
                       ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        decoration: const InputDecoration(
-                          labelText: 'كلمة المرور',
-                          prefixIcon: Icon(Icons.lock_outline_rounded),
-                          border: OutlineInputBorder(),
+                      const SizedBox(height: 40),
+
+                      // Login Card
+                      Container(
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: const Color(0xFFE2EAE5)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
                         ),
-                        obscureText: true,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_errorMessage != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF2F2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color(0xFFFEE2E2)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline_rounded,
+                                        color: Color(0xFFDC2626), size: 20),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        _errorMessage!,
+                                        style: const TextStyle(
+                                            color: Color(0xFF991B1B),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                            const Text(
+                              'البريد الإلكتروني',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                color: Color(0xFF193F38),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _emailController,
+                              decoration: InputDecoration(
+                                hintText: 'admin@souf360.com',
+                                prefixIcon:
+                                    const Icon(Icons.alternate_email_rounded),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'كلمة المرور',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                color: Color(0xFF193F38),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _passwordController,
+                              decoration: InputDecoration(
+                                hintText: '••••••••',
+                                prefixIcon:
+                                    const Icon(Icons.lock_outline_rounded),
+                                filled: true,
+                                fillColor: const Color(0xFFF8FAFC),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              obscureText: true,
+                            ),
+                            const SizedBox(height: 32),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56,
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF193F38),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                onPressed: _isLoading ? null : _login,
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 3,
+                                        ),
+                                      )
+                                    : const Text(
+                                        'دخول لوحة التحكم',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF193F38),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onPressed: _isLoading ? null : _login,
-                          child: _isLoading
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white)
-                              : const Text('دخول لوحة التحكم',
-                                  style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 40),
+                      const Text(
+                        'Souf 360 Ecosystem • v1.2.0',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -144,7 +256,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
