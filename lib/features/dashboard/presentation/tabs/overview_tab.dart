@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OverviewTab extends StatefulWidget {
@@ -16,10 +17,12 @@ class _OverviewTabState extends State<OverviewTab> {
   RealtimeChannel? _channel;
   Timer? _refreshDebounce;
   Timer? _periodicRefresh;
+  String _displayVersion = '';
 
   @override
   void initState() {
     super.initState();
+    _loadInstalledVersion();
     _reload();
     _subscribeToChanges();
     _periodicRefresh = Timer.periodic(
@@ -36,6 +39,11 @@ class _OverviewTabState extends State<OverviewTab> {
       Supabase.instance.client.removeChannel(_channel!);
     }
     super.dispose();
+  }
+
+  Future<void> _loadInstalledVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) setState(() => _displayVersion = packageInfo.version);
   }
 
   void _subscribeToChanges() {
@@ -123,6 +131,7 @@ class _OverviewTabState extends State<OverviewTab> {
         }
         return _DashboardView(
           snapshot: snapshot.data!,
+          version: _displayVersion,
           onRefresh: _refresh,
           onOpenSection: widget.onOpenSection,
         );
@@ -158,11 +167,13 @@ class _AdminSnapshot {
 class _DashboardView extends StatelessWidget {
   const _DashboardView({
     required this.snapshot,
+    required this.version,
     required this.onRefresh,
     required this.onOpenSection,
   });
 
   final _AdminSnapshot snapshot;
+  final String version;
   final RefreshCallback onRefresh;
   final ValueChanged<int> onOpenSection;
 
@@ -415,9 +426,9 @@ class _DashboardView extends StatelessWidget {
               fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Ouedna Admin • v1.2.0',
-          style: TextStyle(
+        Text(
+          version.isEmpty ? 'Ouedna Admin' : 'Ouedna Admin • v$version',
+          style: const TextStyle(
               color: Color(0xFFCBD5E1),
               fontSize: 10,
               fontWeight: FontWeight.w700),
