@@ -69,15 +69,21 @@ class _UpdateManagementDialogState extends State<UpdateManagementDialog> {
   }
 
   Future<void> _persist() async {
-    await Supabase.instance.client.from('app_config').upsert({
-      'id': 1,
-      'latest_version': _version.text.trim(),
-      'force_update': _forceUpdate,
-      'android_store_url': null,
-      'direct_apk_url': _directApkUrl.text.trim(),
-      'apk_sha256': _sha256.text.trim().toLowerCase(),
-      'release_notes': _emptyToNull(_notes.text),
-    });
+    final response = await Supabase.instance.client.functions.invoke(
+      'save-release-config',
+      body: {
+        'latest_version': _version.text.trim(),
+        'force_update': _forceUpdate,
+        'direct_apk_url': _directApkUrl.text.trim(),
+        'apk_sha256': _sha256.text.trim().toLowerCase(),
+        'release_notes': _emptyToNull(_notes.text),
+      },
+    );
+    if (response.status < 200 || response.status >= 300) {
+      final data = response.data;
+      final reason = data is Map ? data['error']?.toString() : null;
+      throw StateError(reason ?? 'تعذر حفظ إعدادات الإصدار.');
+    }
   }
 
   Future<void> _save({bool closeAfterSave = true}) async {
