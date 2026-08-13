@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -13,6 +14,18 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
+  String _displayVersion = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInstalledVersion();
+  }
+
+  Future<void> _loadInstalledVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) setState(() => _displayVersion = packageInfo.version);
+  }
 
   Future<void> _login() async {
     setState(() {
@@ -243,9 +256,11 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      const Text(
-                        'Ouedna Ecosystem • v1.2.0',
-                        style: TextStyle(
+                      Text(
+                        _displayVersion.isEmpty
+                            ? 'Ouedna Ecosystem'
+                            : 'Ouedna Ecosystem • v$_displayVersion',
+                        style: const TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
