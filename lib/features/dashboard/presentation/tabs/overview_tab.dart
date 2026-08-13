@@ -416,7 +416,7 @@ class _DashboardView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         const Text(
-          'Souf 360 Admin • v1.2.0',
+          'Ouedna Admin • v1.2.0',
           style: TextStyle(
               color: Color(0xFFCBD5E1),
               fontSize: 10,

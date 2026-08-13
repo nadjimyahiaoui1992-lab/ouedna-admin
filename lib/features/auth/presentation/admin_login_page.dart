@@ -93,7 +93,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                       ),
                       const SizedBox(height: 28),
                       const Text(
-                        'Souf 360 Admin',
+                        'Ouedna Admin · وادنا',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
@@ -171,7 +171,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                             TextField(
                               controller: _emailController,
                               decoration: InputDecoration(
-                                hintText: 'admin@souf360.com',
+                                hintText: 'admin@ouedna.app',
                                 prefixIcon:
                                     const Icon(Icons.alternate_email_rounded),
                                 filled: true,
@@ -244,7 +244,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                       ),
                       const SizedBox(height: 40),
                       const Text(
-                        'Souf 360 Ecosystem • v1.2.0',
+                        'Ouedna Ecosystem • v1.2.0',
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 12,

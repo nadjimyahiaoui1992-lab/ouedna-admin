@@ -11,7 +11,7 @@ class SoufAdminApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Souf 360 Admin',
+      title: 'Ouedna Admin · وادنا',
       debugShowCheckedModeBanner: false,
       locale: const Locale('ar', 'DZ'),
       supportedLocales: const [Locale('ar', 'DZ')],

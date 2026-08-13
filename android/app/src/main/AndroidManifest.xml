@@ -2,9 +2,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     
     <application
-        android:label="Souf 360 Admin"
+        android:label="وادنا - الإدارة"
         android:name="${applicationName}"
-        android:icon="@drawable/souf360_app_icon">
+        android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
             android:exported="true"

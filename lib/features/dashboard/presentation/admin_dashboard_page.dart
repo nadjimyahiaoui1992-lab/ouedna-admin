@@ -6,6 +6,7 @@ import 'tabs/memories_tab.dart';
 import 'tabs/overview_tab.dart';
 import 'tabs/places_tab.dart';
 import 'tabs/testimonials_tab.dart';
+import 'tabs/update_management_dialog.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -57,7 +58,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Souf 360',
+                    'Ouedna · وادنا',
                     style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
@@ -75,6 +76,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ],
           ),
           actions: [
+            IconButton(
+              tooltip: 'إدارة تحديث التطبيق',
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (_) => const UpdateManagementDialog(),
+              ),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6F3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.system_update_alt_rounded,
+                    color: Color(0xFF193F38), size: 20),
+              ),
+            ),
             IconButton(
               onPressed: () async {
                 await Supabase.instance.client.auth.signOut();
