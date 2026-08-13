@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'tabs/announcement_composer_dialog.dart';
 import 'tabs/feedback_tab.dart';
 import 'tabs/memories_tab.dart';
 import 'tabs/overview_tab.dart';
@@ -76,6 +77,29 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ],
           ),
           actions: [
+            IconButton(
+              tooltip: 'نشر إشعار للزوار',
+              onPressed: () async {
+                final message = await showDialog<String>(
+                  context: context,
+                  builder: (_) => const AnnouncementComposerDialog(),
+                );
+                if (message != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(message)),
+                  );
+                }
+              },
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F3FF),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.campaign_rounded,
+                    color: Color(0xFF7C3AED), size: 20),
+              ),
+            ),
             IconButton(
               tooltip: 'إدارة تحديث التطبيق',
               onPressed: () => showDialog<void>(
