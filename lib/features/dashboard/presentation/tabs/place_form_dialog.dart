@@ -83,10 +83,15 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   }
 
   LatLng? _pointFromFields() {
-    final latitude = double.tryParse(_latController.text.trim().replaceAll(',', '.'));
-    final longitude = double.tryParse(_lngController.text.trim().replaceAll(',', '.'));
+    final latitude =
+        double.tryParse(_latController.text.trim().replaceAll(',', '.'));
+    final longitude =
+        double.tryParse(_lngController.text.trim().replaceAll(',', '.'));
     if (latitude == null || longitude == null) return null;
-    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    if (latitude < -90 ||
+        latitude > 90 ||
+        longitude < -180 ||
+        longitude > 180) {
       return null;
     }
     return LatLng(latitude, longitude);
@@ -109,10 +114,13 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final point = _pointFromFields();
-    if ((_latController.text.trim().isNotEmpty || _lngController.text.trim().isNotEmpty) &&
+    if ((_latController.text.trim().isNotEmpty ||
+            _lngController.text.trim().isNotEmpty) &&
         point == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تحقق من صحة خط العرض وخط الطول أو اختر الموقع من الخريطة.')),
+        const SnackBar(
+            content: Text(
+                'تحقق من صحة خط العرض وخط الطول أو اختر الموقع من الخريطة.')),
       );
       return;
     }
@@ -173,40 +181,82 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _buildSectionTitle('المعلومات الأساسية'),
-                          _buildField('اسم المعلم', _nameController, Icons.title_rounded, required: true),
+                          _buildField('اسم المعلم', _nameController,
+                              Icons.title_rounded,
+                              required: true),
                           const SizedBox(height: 16),
                           _buildCategoryDropdown(),
                           const SizedBox(height: 16),
-                          _buildField('الوصف', _descriptionController, Icons.description_rounded, maxLines: 3),
+                          _buildField('الوصف', _descriptionController,
+                              Icons.description_rounded,
+                              maxLines: 3),
                           const SizedBox(height: 24),
                           _buildSectionTitle('الموقع والتواصل'),
-                          _buildField('العنوان الكامل', _addressController, Icons.location_on_rounded),
+                          _buildField('العنوان الكامل', _addressController,
+                              Icons.location_on_rounded),
                           const SizedBox(height: 12),
                           _buildMapPickerCard(),
                           const SizedBox(height: 16),
                           LayoutBuilder(
-                            builder: (context, constraints) => constraints.maxWidth < 360
-                                ? Column(
-                                    children: [
-                                      _buildField('خط العرض', _latController, Icons.south_rounded, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true)),
-                                      const SizedBox(height: 12),
-                                      _buildField('خط الطول', _lngController, Icons.east_rounded, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true)),
-                                    ],
-                                  )
-                                : Row(
-                                    children: [
-                                      Expanded(child: _buildField('خط العرض', _latController, Icons.south_rounded, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true))),
-                                      const SizedBox(width: 12),
-                                      Expanded(child: _buildField('خط الطول', _lngController, Icons.east_rounded, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true))),
-                                    ],
-                                  ),
+                            builder: (context, constraints) =>
+                                constraints.maxWidth < 360
+                                    ? Column(
+                                        children: [
+                                          _buildField(
+                                              'خط العرض',
+                                              _latController,
+                                              Icons.south_rounded,
+                                              keyboardType: const TextInputType
+                                                  .numberWithOptions(
+                                                  decimal: true, signed: true)),
+                                          const SizedBox(height: 12),
+                                          _buildField(
+                                              'خط الطول',
+                                              _lngController,
+                                              Icons.east_rounded,
+                                              keyboardType: const TextInputType
+                                                  .numberWithOptions(
+                                                  decimal: true, signed: true)),
+                                        ],
+                                      )
+                                    : Row(
+                                        children: [
+                                          Expanded(
+                                              child: _buildField(
+                                                  'خط العرض',
+                                                  _latController,
+                                                  Icons.south_rounded,
+                                                  keyboardType:
+                                                      const TextInputType
+                                                          .numberWithOptions(
+                                                          decimal: true,
+                                                          signed: true))),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                              child: _buildField(
+                                                  'خط الطول',
+                                                  _lngController,
+                                                  Icons.east_rounded,
+                                                  keyboardType:
+                                                      const TextInputType
+                                                          .numberWithOptions(
+                                                          decimal: true,
+                                                          signed: true))),
+                                        ],
+                                      ),
                           ),
                           if (_pointFromFields() != null) ...[
                             const SizedBox(height: 8),
-                            const Text('تم تحديد موقع المعلم بدقة على الخريطة.', style: TextStyle(color: _brandGreen, fontSize: 12, fontWeight: FontWeight.w700)),
+                            const Text('تم تحديد موقع المعلم بدقة على الخريطة.',
+                                style: TextStyle(
+                                    color: _brandGreen,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700)),
                           ],
                           const SizedBox(height: 16),
-                          _buildField('رقم الهاتف', _phoneController, Icons.phone_rounded, keyboardType: TextInputType.phone),
+                          _buildField('رقم الهاتف', _phoneController,
+                              Icons.phone_rounded,
+                              keyboardType: TextInputType.phone),
                           const SizedBox(height: 24),
                           _buildSectionTitle('الحالة والنشر'),
                           _buildStatusToggle(),
@@ -323,10 +373,13 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('حدد موقع المعلم على الخريطة', style: TextStyle(fontWeight: FontWeight.w900, color: _brandGreen)),
+        const Text('حدد موقع المعلم على الخريطة',
+            style: TextStyle(fontWeight: FontWeight.w900, color: _brandGreen)),
         const SizedBox(height: 4),
         Text(
-          point == null ? 'اضغط على الخريطة ثم ضع الدبوس بدقة.' : '${point.latitude.toStringAsFixed(5)}، ${point.longitude.toStringAsFixed(5)}',
+          point == null
+              ? 'اضغط على الخريطة ثم ضع الدبوس بدقة.'
+              : '${point.latitude.toStringAsFixed(5)}، ${point.longitude.toStringAsFixed(5)}',
           style: const TextStyle(fontSize: 12, color: Colors.black54),
         ),
       ],
@@ -335,7 +388,9 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
       onPressed: _openMapPicker,
       icon: const Icon(Icons.map_outlined, size: 18),
       label: Text(point == null ? 'فتح الخريطة' : 'تعديل'),
-      style: FilledButton.styleFrom(backgroundColor: _brandGreen, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11)),
+      style: FilledButton.styleFrom(
+          backgroundColor: _brandGreen,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11)),
     );
     return Container(
       width: double.infinity,
@@ -351,7 +406,14 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(children: [
-                    Container(width: 46, height: 46, decoration: BoxDecoration(color: _brandGreen, borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.pin_drop_rounded, color: Colors.white)),
+                    Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                            color: _brandGreen,
+                            borderRadius: BorderRadius.circular(14)),
+                        child: const Icon(Icons.pin_drop_rounded,
+                            color: Colors.white)),
                     const SizedBox(width: 12),
                     Expanded(child: details),
                   ]),
@@ -361,7 +423,14 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
               )
             : Row(
                 children: [
-                  Container(width: 46, height: 46, decoration: BoxDecoration(color: _brandGreen, borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.pin_drop_rounded, color: Colors.white)),
+                  Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                          color: _brandGreen,
+                          borderRadius: BorderRadius.circular(14)),
+                      child: const Icon(Icons.pin_drop_rounded,
+                          color: Colors.white)),
                   const SizedBox(width: 12),
                   Expanded(child: details),
                   const SizedBox(width: 8),
@@ -410,7 +479,8 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
             ),
             child: const Column(
               children: [
-                Icon(Icons.add_photo_alternate_rounded, color: _brandGreen, size: 32),
+                Icon(Icons.add_photo_alternate_rounded,
+                    color: _brandGreen, size: 32),
                 SizedBox(height: 8),
                 Text(
                   'إضافة صور من المعرض',
@@ -457,9 +527,11 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
               onPressed: () => Navigator.pop(context),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
-              child: const Text('إلغاء', style: TextStyle(fontWeight: FontWeight.w900)),
+              child: const Text('إلغاء',
+                  style: TextStyle(fontWeight: FontWeight.w900)),
             ),
           ),
           const SizedBox(width: 16),
@@ -469,15 +541,18 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
               style: FilledButton.styleFrom(
                 backgroundColor: _brandGreen,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: _isLoading
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
                     )
-                  : const Text('حفظ المعلم', style: TextStyle(fontWeight: FontWeight.w900)),
+                  : const Text('حفظ المعلم',
+                      style: TextStyle(fontWeight: FontWeight.w900)),
             ),
           ),
         ],
@@ -529,12 +604,16 @@ class _MapPickerDialogState extends State<_MapPickerDialog> {
                   const Expanded(
                     child: Text(
                       'اختيار موقع المعلم',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 17),
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                    icon:
+                        const Icon(Icons.close_rounded, color: Colors.white70),
                   ),
                 ],
               ),
@@ -546,11 +625,13 @@ class _MapPickerDialogState extends State<_MapPickerDialog> {
                     options: MapOptions(
                       initialCenter: _selectedPoint,
                       initialZoom: 13.5,
-                      onTap: (_, point) => setState(() => _selectedPoint = point),
+                      onTap: (_, point) =>
+                          setState(() => _selectedPoint = point),
                     ),
                     children: [
                       TileLayer(
-                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        urlTemplate:
+                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                         userAgentPackageName: 'com.ouedna.admin',
                       ),
                       MarkerLayer(
@@ -561,7 +642,8 @@ class _MapPickerDialogState extends State<_MapPickerDialog> {
                             height: 64,
                             child: const Column(
                               children: [
-                                Icon(Icons.location_on_rounded, color: Colors.red, size: 48),
+                                Icon(Icons.location_on_rounded,
+                                    color: Colors.red, size: 48),
                                 SizedBox(height: 1),
                                 Expanded(child: SizedBox()),
                               ],
@@ -579,11 +661,13 @@ class _MapPickerDialogState extends State<_MapPickerDialog> {
                       margin: EdgeInsets.zero,
                       color: Colors.white.withOpacity(0.94),
                       child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         child: Text(
                           'اضغط على أي نقطة في الخريطة لتحريك الدبوس، ثم أكد الموقع.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 12),
                         ),
                       ),
                     ),
@@ -600,11 +684,14 @@ class _MapPickerDialogState extends State<_MapPickerDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('الإحداثيات المحددة', style: TextStyle(fontSize: 11, color: Colors.black54)),
+                        const Text('الإحداثيات المحددة',
+                            style:
+                                TextStyle(fontSize: 11, color: Colors.black54)),
                         const SizedBox(height: 3),
                         Text(
                           '${_selectedPoint.latitude.toStringAsFixed(6)}، ${_selectedPoint.longitude.toStringAsFixed(6)}',
-                          style: const TextStyle(color: _brandGreen, fontWeight: FontWeight.w900),
+                          style: const TextStyle(
+                              color: _brandGreen, fontWeight: FontWeight.w900),
                         ),
                       ],
                     ),
@@ -629,4 +716,3 @@ class _MapPickerDialogState extends State<_MapPickerDialog> {
     );
   }
 }
-

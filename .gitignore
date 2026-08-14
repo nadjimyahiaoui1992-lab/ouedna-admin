@@ -41,6 +41,16 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+android/.gradle/
+android/key.properties
+android/app/google-services.json
+android/app/*.jks
+android/app/*.keystore
+ios/Pods/
+ios/Flutter/ephemeral/
+macos/Flutter/ephemeral/
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
 
 # Fichiers temporaires de migrations locales
 /.tmp_*.json

@@ -1,11 +1,11 @@
 {
-    "name": "souf_admin",
-    "short_name": "souf_admin",
+    "name": "وادنا إدارة | Ouedna Admin",
+    "short_name": "وادنا إدارة",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7F8F5",
+    "theme_color": "#0E4B42",
+    "description": "لوحة إدارة وادنا لمراجعة المعالم والمحتوى وتجارب الزوار في ولاية الوادي.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

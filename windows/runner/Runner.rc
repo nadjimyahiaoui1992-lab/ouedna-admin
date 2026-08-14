@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.souf360" "\0"
-            VALUE "FileDescription", "souf_admin" "\0"
+            VALUE "CompanyName", "Ouedna" "\0"
+            VALUE "FileDescription", "Ouedna Admin" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "souf_admin" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.souf360. All rights reserved." "\0"
-            VALUE "OriginalFilename", "souf_admin.exe" "\0"
-            VALUE "ProductName", "souf_admin" "\0"
+            VALUE "InternalName", "ouedna_admin" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Ouedna. All rights reserved." "\0"
+            VALUE "OriginalFilename", "ouedna_admin.exe" "\0"
+            VALUE "ProductName", "Ouedna Admin" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

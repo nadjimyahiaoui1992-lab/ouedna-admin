@@ -48,9 +48,10 @@ class _TestimonialsTabState extends State<TestimonialsTab> {
         _refresh();
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      }
     }
   }
 
@@ -59,9 +60,10 @@ class _TestimonialsTabState extends State<TestimonialsTab> {
       await Supabase.instance.client.from('testimonials').delete().eq('id', id);
       _refresh();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      }
     }
   }
 
@@ -124,14 +126,13 @@ class _TestimonialsTabState extends State<TestimonialsTab> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.rate_review_outlined,
-              size: 64, color: Color(0xFFCBD5E1)),
-          const SizedBox(height: 16),
-          const Text('لا توجد تجارب زوار حالياً',
+          Icon(Icons.rate_review_outlined, size: 64, color: Color(0xFFCBD5E1)),
+          SizedBox(height: 16),
+          Text('لا توجد تجارب زوار حالياً',
               style: TextStyle(
                   fontWeight: FontWeight.w900, color: Color(0xFF64748B))),
         ],

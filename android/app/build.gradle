@@ -5,6 +5,20 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Les identifiants de signature restent hors du dépôt et sont lus uniquement
+// depuis OUEDNA_KEYSTORE_PATH, OUEDNA_KEY_ALIAS, OUEDNA_STORE_PASSWORD et
+// OUEDNA_KEY_PASSWORD, comme pour l’application visiteur.
+def releaseStorePath = System.getenv("OUEDNA_KEYSTORE_PATH")
+def releaseKeyAlias = System.getenv("OUEDNA_KEY_ALIAS")
+def releaseStorePassword = System.getenv("OUEDNA_STORE_PASSWORD")
+def releaseKeyPassword = System.getenv("OUEDNA_KEY_PASSWORD")
+def hasReleaseSigning = [
+    releaseStorePath,
+    releaseKeyAlias,
+    releaseStorePassword,
+    releaseKeyPassword,
+].every { value -> value != null && !value.trim().isEmpty() }
+
 android {
     namespace = "com.ouedna.admin"
     compileSdk = 35
@@ -30,11 +44,26 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile = file(releaseStorePath)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            if (!hasReleaseSigning) {
+                throw new GradleException(
+                    "La signature release exige OUEDNA_KEYSTORE_PATH, OUEDNA_KEY_ALIAS, " +
+                    "OUEDNA_STORE_PASSWORD et OUEDNA_KEY_PASSWORD."
+                )
+            }
+            signingConfig = signingConfigs.release
         }
     }
 }

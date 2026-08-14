@@ -98,12 +98,13 @@ class _OverviewTabState extends State<OverviewTab> {
     final client = Supabase.instance.client;
     final stopwatch = Stopwatch()..start();
 
-    final responses = await Future.wait([
+    final responses = await Future.wait<dynamic>([
       client.from('places').select('id,status'),
       client.from('testimonials').select('id,status'),
       client.from('memories').select('id'),
       client.from('feedback').select('id'),
       client.from('suggestions').select('id,status'),
+      _loadVerifiedAnalytics(client),
     ]);
 
     stopwatch.stop();
@@ -113,6 +114,7 @@ class _OverviewTabState extends State<OverviewTab> {
     final memoriesCount = (responses[2] as List).length;
     final feedbackCount = (responses[3] as List).length;
     final inquiries = (responses[4] as List);
+    final analytics = responses[5] as Map<String, dynamic>?;
     final pendingInquiries = inquiries
         .where((item) =>
             item['status']?.toString() == 'new' ||
@@ -133,8 +135,31 @@ class _OverviewTabState extends State<OverviewTab> {
       latency: stopwatch.elapsed,
       refreshedAt: DateTime.now(),
       accountEmail: client.auth.currentUser?.email ?? 'مدير النظام',
+      installations: _asInt(analytics?['installations']),
+      dailyActiveUsers: _asInt(analytics?['daily_active_users']),
+      weeklyActiveUsers: _asInt(analytics?['weekly_active_users']),
+      newInstallations30d: _asInt(analytics?['new_installations_30d']),
+      githubAssetDownloads: _asInt(analytics?['github_asset_downloads']),
+      firebaseAnalyticsReady: analytics?['firebase_analytics_ready'] == true,
+      analyticsAvailable: analytics != null,
     );
   }
+
+  Future<Map<String, dynamic>?> _loadVerifiedAnalytics(
+    SupabaseClient client,
+  ) async {
+    try {
+      final response = await client.functions.invoke('get-admin-analytics');
+      final data = response.data;
+      return data is Map<String, dynamic> ? data : null;
+    } catch (_) {
+      // Le tableau de bord de contenu reste disponible si la métrique externe
+      // ou le cache GitHub est temporairement inaccessible.
+      return null;
+    }
+  }
+
+  int _asInt(dynamic value) => value is num ? value.toInt() : 0;
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +197,13 @@ class _AdminSnapshot {
     required this.latency,
     required this.refreshedAt,
     required this.accountEmail,
+    required this.installations,
+    required this.dailyActiveUsers,
+    required this.weeklyActiveUsers,
+    required this.newInstallations30d,
+    required this.githubAssetDownloads,
+    required this.firebaseAnalyticsReady,
+    required this.analyticsAvailable,
   });
 
   final int totalPlaces;
@@ -184,6 +216,13 @@ class _AdminSnapshot {
   final Duration latency;
   final DateTime refreshedAt;
   final String accountEmail;
+  final int installations;
+  final int dailyActiveUsers;
+  final int weeklyActiveUsers;
+  final int newInstallations30d;
+  final int githubAssetDownloads;
+  final bool firebaseAnalyticsReady;
+  final bool analyticsAvailable;
 }
 
 class _DashboardView extends StatelessWidget {
@@ -214,6 +253,8 @@ class _DashboardView extends StatelessWidget {
           _buildSectionTitle(context, 'المؤشرات الحية'),
           const SizedBox(height: 16),
           _buildMetricsGrid(context),
+          const SizedBox(height: 20),
+          _buildAudiencePulseCard(context),
           const SizedBox(height: 28),
           _buildSectionTitle(context, 'إجراءات سريعة'),
           const SizedBox(height: 16),
@@ -228,14 +269,14 @@ class _DashboardView extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
-        Expanded(
+        const Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'مرحباً بك،',
                 style: TextStyle(
-                  color: const Color(0xFF64748B),
+                  color: Color(0xFF64748B),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -243,7 +284,7 @@ class _DashboardView extends StatelessWidget {
               Text(
                 'مركز القيادة',
                 style: TextStyle(
-                  color: const Color(0xFF193F38),
+                  color: Color(0xFF193F38),
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
                 ),
@@ -412,7 +453,111 @@ class _DashboardView extends StatelessWidget {
           onTap: () => onOpenSection(4),
           isAlert: snapshot.pendingInquiries > 0,
         ),
+        _MetricCard(
+          title: 'تثبيتات موثقة',
+          value: snapshot.analyticsAvailable
+              ? snapshot.installations.toString()
+              : '—',
+          icon: Icons.install_mobile_rounded,
+          color: const Color(0xFF0F766E),
+          trend: snapshot.analyticsAvailable
+              ? '${snapshot.newInstallations30d} خلال 30 يوماً'
+              : 'يبدأ العد بعد النسخة الجديدة',
+          onTap: () {},
+        ),
+        _MetricCard(
+          title: 'نشط اليوم',
+          value: snapshot.analyticsAvailable
+              ? snapshot.dailyActiveUsers.toString()
+              : '—',
+          icon: Icons.bolt_rounded,
+          color: const Color(0xFF2563EB),
+          trend: snapshot.analyticsAvailable
+              ? '${snapshot.weeklyActiveUsers} نشط خلال 7 أيام'
+              : 'بانتظار أول فتح للتطبيق',
+          onTap: () {},
+        ),
+        _MetricCard(
+          title: 'تنزيلات الإصدار',
+          value: snapshot.analyticsAvailable
+              ? snapshot.githubAssetDownloads.toString()
+              : '—',
+          icon: Icons.cloud_download_rounded,
+          color: const Color(0xFFD97706),
+          trend: 'عدد تنزيل ملفات APK المنشورة',
+          onTap: () {},
+        ),
+        _MetricCard(
+          title: 'Firebase Analytics',
+          value: snapshot.firebaseAnalyticsReady ? 'GA4 متصل' : 'مفعّل',
+          icon: Icons.insights_rounded,
+          color: const Color(0xFF7C3AED),
+          trend: snapshot.firebaseAnalyticsReady
+              ? 'ملخصات النشاط والاحتفاظ داخل اللوحة'
+              : 'التقارير التفصيلية متاحة في Firebase Console',
+          onTap: () {},
+        ),
       ],
+    );
+  }
+
+  Widget _buildAudiencePulseCard(BuildContext context) {
+    final analyticsReady = snapshot.analyticsAvailable;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5FAF8),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD7E9E2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.insights_rounded, color: Color(0xFF193F38)),
+              SizedBox(width: 10),
+              Text(
+                'نبض الجمهور',
+                style: TextStyle(
+                  color: Color(0xFF193F38),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            analyticsReady
+                ? 'الأرقام مبنية على فتحات التطبيق الفعلية والتثبيتات المجهولة الهوية. Firebase Analytics مفعّل في تطبيق الزائر، وتفاصيل الاحتفاظ والسلوك متاحة في Firebase Console.'
+                : 'يتم الآن تجهيز مؤشرات الزوار. ستظهر الأرقام تلقائياً بعد أن يفتح المستخدمون النسخة الجديدة.',
+            style: const TextStyle(
+              color: Color(0xFF52635E),
+              fontSize: 12,
+              height: 1.55,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _SourceChip(
+                label:
+                    'Supabase: ${analyticsReady ? 'متصل' : 'بانتظار البيانات'}',
+                color: const Color(0xFF0F766E),
+              ),
+              const SizedBox(width: 8),
+              _SourceChip(
+                label: snapshot.firebaseAnalyticsReady
+                    ? 'Firebase GA4: متصل'
+                    : 'Firebase: مفعّل',
+                color: const Color(0xFF7C3AED),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -463,6 +608,30 @@ class _DashboardView extends StatelessWidget {
   String _formatTime(DateTime time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
+}
+
+class _SourceChip extends StatelessWidget {
+  const _SourceChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: color.withOpacity(.1),
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: color,
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      );
 }
 
 class _MetricCard extends StatelessWidget {

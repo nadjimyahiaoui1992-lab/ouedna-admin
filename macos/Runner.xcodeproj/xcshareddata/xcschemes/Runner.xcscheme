@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "33CC10EC2044A3C60003C045"
-               BuildableName = "souf_admin.app"
+               BuildableName = "Ouedna Admin.app"
                BlueprintName = "Runner"
                ReferencedContainer = "container:Runner.xcodeproj">
             </BuildableReference>
@@ -31,8 +31,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
-            BuildableName = "souf_admin.app"
-            BlueprintName = "Runner"
+               BuildableName = "Ouedna Admin.app"
+               BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -65,8 +65,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
-            BuildableName = "souf_admin.app"
-            BlueprintName = "Runner"
+               BuildableName = "Ouedna Admin.app"
+               BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -82,8 +82,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "33CC10EC2044A3C60003C045"
-            BuildableName = "souf_admin.app"
-            BlueprintName = "Runner"
+               BuildableName = "Ouedna Admin.app"
+               BlueprintName = "Runner"
             ReferencedContainer = "container:Runner.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

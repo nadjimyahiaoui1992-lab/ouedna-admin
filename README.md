@@ -1,16 +1,26 @@
-# souf_admin
+# Ouedna Admin — وادنا إدارة
 
-A new Flutter project.
+تطبيق الإدارة الرسمي لمنظومة Ouedna. يتيح للمشرفين المصرح لهم مراجعة المعالم والاقتراحات ومحتوى المجتمع، إدارة الموقع والإحداثيات والصور، ومتابعة مؤشرات النشاط المرتبطة بقاعدة Supabase المشتركة.
 
-## Getting Started
+## الهوية التقنية
 
-This project is a starting point for a Flutter application.
+| العنصر | القيمة |
+|---|---|
+| الواجهة | Flutter وMaterial 3 بالعربية RTL |
+| حزمة Android | `com.ouedna.admin` |
+| البيانات | Supabase مع صلاحيات إدارية بعد تسجيل الدخول |
+| التطبيق المرتبط | [Ouedna App](https://ouedna.vercel.app/download) و[Ouedna Web](https://ouedna.vercel.app/) |
 
-A few resources to get you started if this is your first Flutter project:
+## التشغيل والتحقق
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+يتطلب المشروع Flutter 3.24+ وAndroid SDK 35 وJava 17.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+dart format --set-exit-if-changed lib test
+flutter analyze --fatal-infos
+flutter test
+flutter build apk --debug
+```
+
+لا تُدرج مفاتيح `service_role` أو بيانات توقيع الإصدار أو ملفات Firebase الخاصة في Git. تُضبط بيانات الوصول المخولة من خلال بيئة الإصدار وSupabase، وتبقى العمليات الإدارية محمية بتسجيل الدخول والسياسات المناسبة.

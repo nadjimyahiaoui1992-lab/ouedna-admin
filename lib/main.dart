@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'app/souf_admin_app.dart';
+import 'app/ouedna_admin_app.dart';
 import 'core/config/app_config.dart';
 
 Future<void> main() async {
@@ -13,5 +13,5 @@ Future<void> main() async {
     authOptions: const FlutterAuthClientOptions(autoRefreshToken: true),
   );
 
-  runApp(const SoufAdminApp());
+  runApp(const OuednaAdminApp());
 }
