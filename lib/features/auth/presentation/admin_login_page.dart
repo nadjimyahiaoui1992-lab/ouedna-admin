@@ -23,8 +23,8 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   }
 
   Future<void> _loadInstalledVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    if (mounted) setState(() => _displayVersion = packageInfo.version);
+    _displayVersion = '2.0.2';
+    if (mounted) setState(() {});
   }
 
   Future<void> _login() async {
