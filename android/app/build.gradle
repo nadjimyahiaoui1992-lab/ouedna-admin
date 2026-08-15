@@ -18,6 +18,9 @@ def hasReleaseSigning = [
     releaseStorePassword,
     releaseKeyPassword,
 ].every { value -> value != null && !value.trim().isEmpty() }
+def requestsReleaseBuild = gradle.startParameter.taskNames.any { taskName ->
+    taskName.toLowerCase().contains("release")
+}
 
 android {
     namespace = "com.ouedna.admin"
@@ -57,7 +60,7 @@ android {
 
     buildTypes {
         release {
-            if (!hasReleaseSigning) {
+            if (requestsReleaseBuild && !hasReleaseSigning) {
                 throw new GradleException(
                     "La signature release exige OUEDNA_KEYSTORE_PATH, OUEDNA_KEY_ALIAS, " +
                     "OUEDNA_STORE_PASSWORD et OUEDNA_KEY_PASSWORD."
