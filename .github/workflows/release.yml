@@ -1,0 +1,90 @@
+name: Publish Ouedna Admin 2
+
+on:
+  push:
+    tags: ['admin-v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag de version existant à publier, par exemple admin-v2.0.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ouedna-admin-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Sign and publish Ouedna Admin 2
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      OUEDNA_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      OUEDNA_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      OUEDNA_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      OUEDNA_KEYSTORE_PATH: ${{ github.workspace }}/android/app/ouedna-admin-v2-release.jks
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.5'
+          channel: stable
+          cache: true
+
+      - name: Validate release secrets
+        run: |
+          missing=()
+          for secret in ANDROID_KEYSTORE_BASE64 OUEDNA_KEY_ALIAS OUEDNA_KEY_PASSWORD OUEDNA_STORE_PASSWORD; do
+            if [ -z "${!secret}" ]; then
+              missing+=("$secret")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "Missing required GitHub Actions secrets: ${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Restore Android signing key
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$OUEDNA_KEYSTORE_PATH"
+          test -s "$OUEDNA_KEYSTORE_PATH"
+          chmod 600 "$OUEDNA_KEYSTORE_PATH"
+
+      - name: Analyze and test
+        run: |
+          flutter pub get
+          dart format --set-exit-if-changed lib test
+          flutter analyze --fatal-infos
+          flutter test
+
+      - name: Build signed APK by ABI
+        run: flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64
+
+      - name: Verify APK signatures
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
+          for apk in build/app/outputs/flutter-apk/*.apk; do
+            "$APKSIGNER" verify --verbose --print-certs "$apk"
+          done
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: build/app/outputs/flutter-apk/*.apk

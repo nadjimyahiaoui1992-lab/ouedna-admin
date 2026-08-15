@@ -632,7 +632,7 @@ class _MapPickerDialogState extends State<_MapPickerDialog> {
                       TileLayer(
                         urlTemplate:
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.ouedna.admin',
+                        userAgentPackageName: 'com.ouedna.admin.v2',
                       ),
                       MarkerLayer(
                         markers: [

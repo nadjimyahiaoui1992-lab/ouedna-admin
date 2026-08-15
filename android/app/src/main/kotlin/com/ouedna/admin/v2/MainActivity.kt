@@ -1,4 +1,4 @@
-package com.ouedna.admin
+package com.ouedna.admin.v2
 
 import io.flutter.embedding.android.FlutterActivity
 
