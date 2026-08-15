@@ -128,6 +128,23 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
 
     try {
       final client = Supabase.instance.client;
+      String? imageUrl = widget.place?['image_url']?.toString();
+
+      if (_selectedImages.isNotEmpty) {
+        final photo = _selectedImages.first;
+        final bytes = await photo.readAsBytes();
+        final ext = photo.name.split('.').last.toLowerCase();
+        final safeExt = {'png', 'webp', 'jpg', 'jpeg'}.contains(ext) ? ext : 'jpg';
+        final fileName = 'places/${DateTime.now().millisecondsSinceEpoch}.$safeExt';
+
+        await client.storage.from('archive-images').uploadBinary(
+          fileName,
+          bytes,
+          fileOptions: FileOptions(contentType: 'image/$safeExt', upsert: true),
+        );
+        imageUrl = client.storage.from('archive-images').getPublicUrl(fileName);
+      }
+
       final data = {
         'name': _nameController.text.trim(),
         'main_category': _mainCategory,
@@ -137,6 +154,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
         'lng': point?.longitude,
         'phone': _phoneController.text.trim(),
         'status': _status,
+        if (imageUrl != null) 'image_url': imageUrl,
       };
 
       if (_isEditing) {
@@ -502,13 +520,20 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
               scrollDirection: Axis.horizontal,
               itemCount: _selectedImages.length,
               separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) => Container(
-                width: 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2EAE5)),
+              itemBuilder: (context, index) => ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2EAE5)),
+                  ),
+                  child: Image.memory(
+                    _selectedImages[index].bytesSync(),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.image_rounded, color: Colors.grey),
+                  ),
                 ),
-                child: const Icon(Icons.image_rounded, color: Colors.grey),
               ),
             ),
           ),
