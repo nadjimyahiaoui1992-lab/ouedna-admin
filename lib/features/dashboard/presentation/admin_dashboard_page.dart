@@ -37,10 +37,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8F5),
+        backgroundColor: const Color(0xFFFFF7EA),
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF193F38),
+          backgroundColor: const Color(0xFFFFFCF7),
+          foregroundColor: const Color(0xFF214A3B),
           elevation: 0,
           toolbarHeight: 75,
           title: Row(
@@ -48,11 +48,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF193F38).withOpacity(0.05),
+                  color: const Color(0xFF214A3B).withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.admin_panel_settings_rounded,
-                    color: Color(0xFF193F38)),
+                    color: Color(0xFF214A3B)),
               ),
               const SizedBox(width: 12),
               const Column(
@@ -70,7 +70,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF64748B)),
+                        color: Color(0xFF756452)),
                   ),
                 ],
               ),
@@ -93,11 +93,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F3FF),
+                  color: const Color(0xFFFFE9C5),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.campaign_rounded,
-                    color: Color(0xFF7C3AED), size: 20),
+                    color: Color(0xFFB85E32), size: 20),
               ),
             ),
             IconButton(
@@ -113,7 +113,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.system_update_alt_rounded,
-                    color: Color(0xFF193F38), size: 20),
+                    color: Color(0xFF214A3B), size: 20),
               ),
             ),
             IconButton(
@@ -134,7 +134,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
-            child: Container(color: const Color(0xFFE2EAE5), height: 1),
+            child: Container(color: const Color(0xFFE5D2B4), height: 1),
           ),
         ),
         body: IndexedStack(index: _currentIndex, children: _tabs),
@@ -150,8 +150,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           child: NavigationBar(
             selectedIndex: _currentIndex,
             onDestinationSelected: _selectTab,
-            backgroundColor: Colors.white,
-            indicatorColor: const Color(0xFF193F38).withOpacity(0.08),
+            backgroundColor: const Color(0xFFFFFCF7),
+            indicatorColor: const Color(0xFF214A3B).withOpacity(0.10),
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             height: 70,
             destinations: [
@@ -175,8 +175,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   NavigationDestination _buildNavDestination(
       IconData icon, IconData selectedIcon, String label) {
     return NavigationDestination(
-      icon: Icon(icon, color: const Color(0xFF64748B)),
-      selectedIcon: Icon(selectedIcon, color: const Color(0xFF193F38)),
+      icon: Icon(icon, color: const Color(0xFF756452)),
+      selectedIcon: Icon(selectedIcon, color: const Color(0xFF214A3B)),
       label: label,
     );
   }

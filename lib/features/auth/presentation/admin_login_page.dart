@@ -62,7 +62,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F8F5),
+        backgroundColor: const Color(0xFFFFF7EA),
         body: Stack(
           children: [
             // Decorative background elements
@@ -73,7 +73,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                 width: 300,
                 height: 300,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF193F38).withOpacity(0.05),
+                  color: const Color(0xFFD58B2D).withOpacity(0.10),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -95,14 +95,14 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                           borderRadius: BorderRadius.circular(28),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF193F38).withOpacity(0.08),
+                              color: const Color(0xFF30241B).withOpacity(0.10),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
                           ],
                         ),
                         child: const Icon(Icons.admin_panel_settings_rounded,
-                            size: 60, color: Color(0xFF193F38)),
+                            size: 60, color: Color(0xFF214A3B)),
                       ),
                       const SizedBox(height: 28),
                       const Text(
@@ -110,7 +110,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
-                          color: Color(0xFF193F38),
+                          color: Color(0xFF214A3B),
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -119,7 +119,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                         'لوحة التحكم المركزية • إدارة الوجهات والمجتمع',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Color(0xFF64748B),
+                          color: Color(0xFF756452),
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                         ),
@@ -132,7 +132,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: const Color(0xFFE2EAE5)),
+                          border: Border.all(color: const Color(0xFFE5D2B4)),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.02),
@@ -177,7 +177,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 14,
-                                color: Color(0xFF193F38),
+                                color: Color(0xFF214A3B),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -188,7 +188,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                                 prefixIcon:
                                     const Icon(Icons.alternate_email_rounded),
                                 filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
+                                fillColor: const Color(0xFFFFF4E2),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide.none,
@@ -202,7 +202,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 14,
-                                color: Color(0xFF193F38),
+                                color: Color(0xFF214A3B),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -213,7 +213,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                                 prefixIcon:
                                     const Icon(Icons.lock_outline_rounded),
                                 filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
+                                fillColor: const Color(0xFFFFF4E2),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14),
                                   borderSide: BorderSide.none,
@@ -227,7 +227,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               height: 56,
                               child: FilledButton(
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: const Color(0xFF193F38),
+                                  backgroundColor: const Color(0xFF214A3B),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
@@ -261,7 +261,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                             ? 'Ouedna Ecosystem'
                             : 'Ouedna Ecosystem • v$_displayVersion',
                         style: const TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Color(0xFF9B8066),
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
