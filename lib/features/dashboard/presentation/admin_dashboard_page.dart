@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'tabs/announcement_composer_dialog.dart';
 import 'tabs/memories_tab.dart';
+import 'tabs/media_manager_tab.dart';
 import 'tabs/overview_tab.dart';
 import 'tabs/places_tab.dart';
 import 'tabs/testimonials_tab.dart';
@@ -24,7 +25,7 @@ class AdminDashboardPage extends StatefulWidget {
   State<AdminDashboardPage> createState() => _AdminDashboardPageState();
 }
 
-enum _DashboardAction { announce, update, logout }
+enum _DashboardAction { announce, update, media, logout }
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int _currentIndex = 0;
@@ -35,6 +36,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     const TestimonialsTab(),
     const MemoriesTab(),
     const VisitorInboxTab(),
+    const MediaManagerTab(),
   ];
 
   void _selectTab(int index) {
@@ -57,6 +59,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           context: context,
           builder: (_) => const UpdateManagementDialog(),
         );
+      case _DashboardAction.media:
+        _selectTab(5);
       case _DashboardAction.logout:
         await Supabase.instance.client.auth.signOut();
     }
@@ -170,6 +174,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 onSelected: _handleAction,
                 itemBuilder: (context) => const [
                   PopupMenuItem(
+                    value: _DashboardAction.media,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.photo_library_outlined, color: _ink),
+                      title: Text('إدارة الصور'),
+                    ),
+                  ),
+                  PopupMenuItem(
                     value: _DashboardAction.logout,
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -246,6 +258,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       icon: Icons.location_on_outlined,
                       selected: _currentIndex == 1,
                       onTap: () => _selectTab(1),
+                    ),
+                    _SidebarItem(
+                      label: 'الوسائط',
+                      caption: 'Media Manager والصور',
+                      icon: Icons.photo_library_outlined,
+                      selected: _currentIndex == 5,
+                      onTap: () => _selectTab(5),
                     ),
                     _SidebarItem(
                       label: 'التجارب',
@@ -402,7 +421,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   Widget _buildMobileNavigation() {
     return NavigationBar(
-      selectedIndex: _currentIndex,
+      selectedIndex: _currentIndex < 5 ? _currentIndex : 0,
       onDestinationSelected: _selectTab,
       height: 72,
       backgroundColor: _paper,
