@@ -530,7 +530,11 @@ class _DashboardView extends StatelessWidget {
             crossAxisCount: columns,
             mainAxisSpacing: 14,
             crossAxisSpacing: 14,
-            childAspectRatio: columns >= 4 ? 1.22 : 1.08,
+            childAspectRatio: columns >= 4
+                ? 1.22
+                : columns == 2
+                    ? 0.92
+                    : 1.08,
           ),
           itemBuilder: (_, index) => metrics[index],
         );
@@ -698,53 +702,73 @@ class _MetricCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color:
-                    isAlert ? color.withOpacity(0.3) : const Color(0xFFE2EAE5)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact =
+                constraints.maxWidth < 190 || constraints.maxHeight < 150;
+            final padding = compact ? 14.0 : 20.0;
+            final iconSize = compact ? 24.0 : 28.0;
+            final valueSize = compact ? 24.0 : 28.0;
+            return Container(
+              padding: EdgeInsets.all(padding),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                    color: isAlert
+                        ? color.withOpacity(0.3)
+                        : const Color(0xFFE2EAE5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, color: color, size: 28),
-                  if (isAlert)
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                          color: Colors.red, shape: BoxShape.circle),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(icon, color: color, size: iconSize),
+                      if (isAlert)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                              color: Colors.red, shape: BoxShape.circle),
+                        ),
+                    ],
+                  ),
+                  const Spacer(),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                          fontSize: valueSize,
+                          fontWeight: FontWeight.w900,
+                          color: color),
                     ),
+                  ),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: compact ? 12 : 13,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF193F38)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    trend,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: compact ? 10 : 11,
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
-              const Spacer(),
-              Text(
-                value,
-                style: TextStyle(
-                    fontSize: 28, fontWeight: FontWeight.w900, color: color),
-              ),
-              Text(
-                title,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF193F38)),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                trend,
-                style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
