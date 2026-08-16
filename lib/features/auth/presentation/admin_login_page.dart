@@ -22,7 +22,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   }
 
   Future<void> _loadInstalledVersion() async {
-    _displayVersion = '2.0.6';
+    _displayVersion = '2.0.7';
     if (mounted) setState(() {});
   }
 
