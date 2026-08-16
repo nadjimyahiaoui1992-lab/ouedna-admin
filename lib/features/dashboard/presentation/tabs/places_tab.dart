@@ -87,6 +87,60 @@ class _PlacesTabState extends State<PlacesTab> {
     }
   }
 
+  Future<void> _deletePlace(Map<String, dynamic> place) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('حذف المعلم'),
+          content: Text(
+            'هل تريد حذف «${place['name'] ?? 'هذا المعلم'}» نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('إلغاء'),
+            ),
+            FilledButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.delete_forever_rounded),
+              label: const Text('حذف نهائي'),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await Supabase.instance.client
+          .from('places')
+          .delete()
+          .eq('id', place['id']);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم حذف المعلم بنجاح.'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
+      await _refresh();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تعذر حذف المعلم: $error'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   void _openPlaceForm([Map<String, dynamic>? place]) async {
     final result = await showDialog<bool>(
       context: context,
@@ -131,6 +185,7 @@ class _PlacesTabState extends State<PlacesTab> {
                           itemBuilder: (context, index) => _PlaceCard(
                             place: filteredPlaces[index],
                             onEdit: () => _openPlaceForm(filteredPlaces[index]),
+                            onDelete: () => _deletePlace(filteredPlaces[index]),
                             onApprove: () =>
                                 _updateStatus(filteredPlaces[index], 'منشور'),
                             onReject: () =>
@@ -293,12 +348,14 @@ class _PlaceCard extends StatelessWidget {
   const _PlaceCard({
     required this.place,
     required this.onEdit,
+    required this.onDelete,
     required this.onApprove,
     required this.onReject,
   });
 
   final Map<String, dynamic> place;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
   final VoidCallback onApprove;
   final VoidCallback onReject;
 
@@ -348,12 +405,27 @@ class _PlaceCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_note_rounded,
-                      color: Color(0xFF193F38)),
-                  style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFF1F5F9)),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'تعديل المعلم',
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_note_rounded,
+                          color: Color(0xFF193F38)),
+                      style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFF1F5F9)),
+                    ),
+                    const SizedBox(height: 6),
+                    IconButton(
+                      tooltip: 'حذف المعلم',
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline_rounded,
+                          color: Colors.red),
+                      style: IconButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFF1F2)),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -405,7 +477,18 @@ class _PlaceCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: url != null && url.isNotEmpty
           ? Image.network(url,
+              key: ValueKey(url),
               fit: BoxFit.cover,
+              gaplessPlayback: true,
+              loadingBuilder: (context, child, progress) => progress == null
+                  ? child
+                  : const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
               errorBuilder: (_, __, ___) => const Icon(
                   Icons.broken_image_rounded,
                   color: Color(0xFFCBD5E1)))
