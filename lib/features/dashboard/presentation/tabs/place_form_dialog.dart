@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,15 +10,19 @@ import '../../../../core/media/image_upload_mime.dart';
 
 class PlaceFormDialog extends StatefulWidget {
   final Map<String, dynamic>? place;
+  final TileProvider? tileProvider;
 
-  const PlaceFormDialog({super.key, this.place});
+  const PlaceFormDialog({super.key, this.place, this.tileProvider});
 
   @override
   State<PlaceFormDialog> createState() => _PlaceFormDialogState();
 }
 
+enum _LocationMethod { coordinates, googleMaps, plusCode, map }
+
 class _PlaceFormDialogState extends State<PlaceFormDialog> {
   static const _brandGreen = Color(0xFF193F38);
+  static const _mapCenter = LatLng(33.3683, 6.8674);
   static const Map<String, List<String>> _categories = {
     'معلم طبيعي': [],
     'معلم ديني': [],
@@ -31,6 +36,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
 
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
+  final _mapController = MapController();
   final List<XFile> _selectedImages = [];
 
   late final TextEditingController _nameController;
@@ -45,6 +51,9 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   String _status = 'منشور';
   bool _isLoading = false;
   bool _isResolvingLink = false;
+  bool _mapReady = false;
+  _LocationMethod _locationMethod = _LocationMethod.coordinates;
+  GeoPoint? _selectedPoint;
 
   bool get _isEditing => widget.place != null;
 
@@ -68,6 +77,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
 
     _mainCategory = p?['main_category']?.toString() ?? _categories.keys.first;
     _status = p?['status']?.toString() ?? 'منشور';
+    _selectedPoint = _pointFromFields();
   }
 
   @override
@@ -103,9 +113,13 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   }
 
   void _setPoint(GeoPoint point) {
+    _selectedPoint = point;
     _latController.text = point.latitude.toStringAsFixed(6);
     _lngController.text = point.longitude.toStringAsFixed(6);
-    setState(() {});
+    if (mounted) setState(() {});
+    if (_mapReady) {
+      _mapController.move(LatLng(point.latitude, point.longitude), 15);
+    }
   }
 
   Future<void> _pasteFromClipboard() async {
@@ -186,7 +200,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text(
-                'تحقق من صحة خط العرض وخط الطول أو الصق رابط/إحداثيات صحيحة.')),
+                'تحقق من صحة خط العرض وخط الطول أو اختر الموقع من الخريطة.')),
       );
       return;
     }
@@ -250,111 +264,57 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
         backgroundColor: Colors.white,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        child: SizedBox(
-          width: 560,
-          height: MediaQuery.sizeOf(context).height * .88,
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: Scrollbar(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildSectionTitle('المعلومات الأساسية'),
-                          _buildField('اسم المعلم', _nameController,
-                              Icons.title_rounded,
-                              required: true),
-                          const SizedBox(height: 16),
-                          _buildCategoryDropdown(),
-                          const SizedBox(height: 16),
-                          _buildField('الوصف', _descriptionController,
-                              Icons.description_rounded,
-                              maxLines: 3),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle('الموقع والتواصل'),
-                          _buildField('العنوان الكامل', _addressController,
-                              Icons.location_on_rounded),
-                          const SizedBox(height: 12),
-                          _buildLocationInputCard(),
-                          const SizedBox(height: 16),
-                          LayoutBuilder(
-                            builder: (context, constraints) =>
-                                constraints.maxWidth < 360
-                                    ? Column(
-                                        children: [
-                                          _buildField(
-                                              'خط العرض',
-                                              _latController,
-                                              Icons.south_rounded,
-                                              keyboardType: const TextInputType
-                                                  .numberWithOptions(
-                                                  decimal: true, signed: true)),
-                                          const SizedBox(height: 12),
-                                          _buildField(
-                                              'خط الطول',
-                                              _lngController,
-                                              Icons.east_rounded,
-                                              keyboardType: const TextInputType
-                                                  .numberWithOptions(
-                                                  decimal: true, signed: true)),
-                                        ],
-                                      )
-                                    : Row(
-                                        children: [
-                                          Expanded(
-                                              child: _buildField(
-                                                  'خط العرض',
-                                                  _latController,
-                                                  Icons.south_rounded,
-                                                  keyboardType:
-                                                      const TextInputType
-                                                          .numberWithOptions(
-                                                          decimal: true,
-                                                          signed: true))),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                              child: _buildField(
-                                                  'خط الطول',
-                                                  _lngController,
-                                                  Icons.east_rounded,
-                                                  keyboardType:
-                                                      const TextInputType
-                                                          .numberWithOptions(
-                                                          decimal: true,
-                                                          signed: true))),
-                                        ],
-                                      ),
-                          ),
-                          if (_pointFromFields() != null) ...[
-                            const SizedBox(height: 8),
-                            const Text('تم تحديد موقع المعلم بدقة.',
-                                style: TextStyle(
-                                    color: _brandGreen,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: SizedBox(
+            width: double.infinity,
+            height: MediaQuery.sizeOf(context).height * .88,
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: Scrollbar(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildSectionTitle('المعلومات الأساسية'),
+                            _buildField('اسم المعلم', _nameController,
+                                Icons.title_rounded,
+                                required: true),
+                            const SizedBox(height: 16),
+                            _buildCategoryDropdown(),
+                            const SizedBox(height: 16),
+                            _buildField('الوصف', _descriptionController,
+                                Icons.description_rounded,
+                                maxLines: 3),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('الموقع والتواصل'),
+                            _buildField('العنوان الكامل', _addressController,
+                                Icons.location_on_rounded),
+                            const SizedBox(height: 12),
+                            _buildLocationPicker(),
+                            const SizedBox(height: 16),
+                            _buildField('رقم الهاتف', _phoneController,
+                                Icons.phone_rounded,
+                                keyboardType: TextInputType.phone),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('الحالة والنشر'),
+                            _buildStatusToggle(),
+                            const SizedBox(height: 24),
+                            _buildImagePicker(),
                           ],
-                          const SizedBox(height: 16),
-                          _buildField('رقم الهاتف', _phoneController,
-                              Icons.phone_rounded,
-                              keyboardType: TextInputType.phone),
-                          const SizedBox(height: 24),
-                          _buildSectionTitle('الحالة والنشر'),
-                          _buildStatusToggle(),
-                          const SizedBox(height: 24),
-                          _buildImagePicker(),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              _buildActions(),
-            ],
+                _buildActions(),
+              ],
+            ),
           ),
         ),
       ),
@@ -372,15 +332,18 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
         children: [
           const Icon(Icons.add_location_alt_rounded, color: Colors.white),
           const SizedBox(width: 12),
-          Text(
-            _isEditing ? 'تعديل المعلم' : 'إضافة معلم جديد',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 18,
+          Expanded(
+            child: Text(
+              _isEditing ? 'تعديل المعلم' : 'إضافة معلم جديد',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+              ),
             ),
           ),
-          const Spacer(),
           IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.close_rounded, color: Colors.white70),
@@ -416,7 +379,13 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      onChanged: (_) => setState(() {}),
+      onChanged: (_) {
+        if (identical(controller, _latController) ||
+            identical(controller, _lngController)) {
+          _selectedPoint = _pointFromFields();
+        }
+        setState(() {});
+      },
       validator: required
           ? (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null
           : null,
@@ -436,6 +405,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<String>(
       value: _mainCategory,
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: 'التصنيف الرئيسي',
         prefixIcon: const Icon(Icons.category_rounded, size: 20),
@@ -453,83 +423,414 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
     );
   }
 
-  Widget _buildLocationInputCard() {
-    final point = _pointFromFields();
+  Widget _buildLocationPicker() {
+    final point = _selectedPoint ?? _pointFromFields();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFFEFF6F3),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFD2E7DF)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('الصق رابط من خرائط جوجل أو إحداثيات أو رمز موقع مفتوح',
-              style: TextStyle(fontWeight: FontWeight.w900, color: _brandGreen)),
+          const Text('تحديد موقع المعلم',
+              style:
+                  TextStyle(fontWeight: FontWeight.w900, color: _brandGreen)),
           const SizedBox(height: 4),
           const Text(
-            'مثال: رابط https://maps.app.goo.gl/... أو 33.3448, 6.8422 أو رمز مثل V75V+8Q',
+            'اختر طريقة واحدة، وسيتم توحيد النتيجة في Latitude وLongitude قبل الحفظ.',
             style: TextStyle(fontSize: 11.5, color: Colors.black54),
           ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Expanded(
-                child: TextField(
-                  controller: _linkController,
-                  minLines: 1,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'رابط الموقع أو الإحداثيات...',
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFD2E7DF)),
-                    ),
-                    prefixIcon: IconButton(
-                      tooltip: 'لصق من الحافظة',
-                      icon: const Icon(Icons.content_paste_rounded, size: 18),
-                      onPressed: _pasteFromClipboard,
-                    ),
+              _buildLocationMethodChip(_LocationMethod.coordinates,
+                  Icons.pin_drop_outlined, 'الإحداثيات'),
+              _buildLocationMethodChip(_LocationMethod.googleMaps,
+                  Icons.link_rounded, 'Google Maps'),
+              _buildLocationMethodChip(_LocationMethod.plusCode,
+                  Icons.add_location_alt_outlined, 'Plus Code'),
+              _buildLocationMethodChip(
+                  _LocationMethod.map, Icons.map_outlined, 'من الخريطة'),
+            ],
+          ),
+          const SizedBox(height: 14),
+          switch (_locationMethod) {
+            _LocationMethod.coordinates => _buildCoordinateInputs(),
+            _LocationMethod.googleMaps => _buildTextLocationInput(
+                'الصق رابط Google Maps أو الرابط المختصر...',
+                'يدعم maps.app.goo.gl و google.com/maps',
+              ),
+            _LocationMethod.plusCode => _buildTextLocationInput(
+                'مثال: 9V83+WHF, El Oued',
+                'يدعم Plus Code الكامل والمختصر عند معرفة منطقة الوادي',
+              ),
+            _LocationMethod.map => _buildInteractiveMap(point),
+          },
+          if (point != null) ...[
+            const SizedBox(height: 12),
+            _buildResolvedLocation(point),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationMethodChip(
+    _LocationMethod method,
+    IconData icon,
+    String label,
+  ) {
+    final selected = _locationMethod == method;
+    return ChoiceChip(
+      selected: selected,
+      onSelected: (_) => setState(() => _locationMethod = method),
+      avatar:
+          Icon(icon, size: 17, color: selected ? Colors.white : _brandGreen),
+      label: Text(label),
+      selectedColor: _brandGreen,
+      backgroundColor: Colors.white,
+      labelStyle: TextStyle(
+        color: selected ? Colors.white : _brandGreen,
+        fontWeight: FontWeight.w800,
+        fontSize: 12,
+      ),
+      side: BorderSide(color: selected ? _brandGreen : const Color(0xFFD2E7DF)),
+    );
+  }
+
+  Widget _buildCoordinateInputs() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fields = [
+          _buildField('Latitude', _latController, Icons.south_rounded,
+              keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true, signed: true)),
+          _buildField('Longitude', _lngController, Icons.east_rounded,
+              keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true, signed: true)),
+        ];
+        return constraints.maxWidth < 380
+            ? Column(
+                children: [fields[0], const SizedBox(height: 10), fields[1]],
+              )
+            : Row(
+                children: [
+                  Expanded(child: fields[0]),
+                  const SizedBox(width: 10),
+                  Expanded(child: fields[1]),
+                ],
+              );
+      },
+    );
+  }
+
+  Widget _buildTextLocationInput(String hint, String helper) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(helper,
+            style: const TextStyle(fontSize: 11, color: Colors.black54)),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _linkController,
+                minLines: 1,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: hint,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: Color(0xFFD2E7DF)),
+                  ),
+                  prefixIcon: IconButton(
+                    tooltip: 'لصق من الحافظة',
+                    icon: const Icon(Icons.content_paste_rounded, size: 18),
+                    onPressed: _pasteFromClipboard,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              FilledButton(
-                onPressed: _isResolvingLink ? null : _applyLocationInput,
-                style: FilledButton.styleFrom(
-                  backgroundColor: _brandGreen,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                child: _isResolvingLink
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text('تطبيق',
-                        style: TextStyle(fontWeight: FontWeight.w900)),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: _isResolvingLink ? null : _applyLocationInput,
+              style: FilledButton.styleFrom(
+                backgroundColor: _brandGreen,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
-            ],
-          ),
-          if (point != null) ...[
-            const SizedBox(height: 10),
-            Row(
+              child: _isResolvingLink
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text('تحويل',
+                      style: TextStyle(fontWeight: FontWeight.w900)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInteractiveMap(GeoPoint? point) {
+    final center =
+        point == null ? _mapCenter : LatLng(point.latitude, point.longitude);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+            'انقر على الخريطة لاختيار موقع المعلم، ويمكنك النقر مرة أخرى لتغييره.',
+            style: TextStyle(fontSize: 11, color: Colors.black54)),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            height: 235,
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: point == null ? 11.5 : 15,
+                onMapReady: () => _mapReady = true,
+                onTap: (_, location) => _setPoint(
+                  GeoPoint(location.latitude, location.longitude),
+                ),
+              ),
               children: [
-                const Icon(Icons.location_on_rounded,
-                    color: _brandGreen, size: 16),
-                const SizedBox(width: 6),
+                TileLayer(
+                  urlTemplate: widget.tileProvider == null
+                      ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+                      : 'assets/branding/icon.png',
+                  tileProvider: widget.tileProvider,
+                  userAgentPackageName: 'dz.ouedna.admin',
+                ),
+                if (point != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: LatLng(point.latitude, point.longitude),
+                        width: 46,
+                        height: 46,
+                        child: const Icon(Icons.location_on,
+                            color: _brandGreen, size: 42),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResolvedLocation(GeoPoint point) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD2E7DF)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_rounded,
+              color: Color(0xFF16805B), size: 19),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'الموقع المحدد\nLatitude: ${point.latitude.toStringAsFixed(6)}  •  Longitude: ${point.longitude.toStringAsFixed(6)}',
+              style: const TextStyle(
+                  color: _brandGreen,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusToggle() {
+    final statuses = ['منشور', 'قيد المراجعة', 'مسودة', 'مرفوض'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: statuses.map((s) {
+        final isSelected = _status == s;
+        return ChoiceChip(
+          label: Text(s),
+          selected: isSelected,
+          onSelected: (_) => setState(() => _status = s),
+          selectedColor: _brandGreen.withOpacity(0.1),
+          labelStyle: TextStyle(
+            color: isSelected ? _brandGreen : Colors.black54,
+            fontWeight: isSelected ? FontWeight.w900 : FontWeight.normal,
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('الصور والوسائط'),
+        GestureDetector(
+          onTap: _pickImages,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2EAE5)),
+            ),
+            child: const Column(
+              children: [
+                Icon(Icons.add_photo_alternate_rounded,
+                    color: _brandGreen, size: 32),
+                SizedBox(height: 8),
                 Text(
-                  '${point.latitude.toStringAsFixed(5)}، ${point.longitude.toStringAsFixed(5)}',
-                  style: const TextStyle(
-                      color: _bran
+                  'إضافة صور من المعرض',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: _brandGreen,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (_selectedImages.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 80,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedImages.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) => ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2EAE5)),
+                  ),
+                  child: FutureBuilder<Uint8List>(
+                    future: _selectedImages[index].readAsBytes(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.hasData) {
+                        return Image.memory(snapshot.data!, fit: BoxFit.cover);
+                      }
+                      return const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2));
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActions() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cancelButton = OutlinedButton(
+          onPressed: () => Navigator.pop(context),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text('إلغاء',
+              style: TextStyle(fontWeight: FontWeight.w900)),
+        );
+        final deleteButton = FilledButton.tonal(
+          onPressed: _isLoading ? null : _deletePlace,
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.red.shade50,
+            foregroundColor: Colors.red.shade700,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text('حذف المعلم',
+              style: TextStyle(fontWeight: FontWeight.w900)),
+        );
+        final saveButton = FilledButton(
+          onPressed: _isLoading ? null : _save,
+          style: FilledButton.styleFrom(
+            backgroundColor: _brandGreen,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
+                )
+              : const Text('حفظ المعلم',
+                  style: TextStyle(fontWeight: FontWeight.w900)),
+        );
+        final buttons = <Widget>[
+          cancelButton,
+          if (_isEditing) deleteButton,
+          saveButton,
+        ];
+        final compact = constraints.maxWidth < 520;
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var index = 0; index < buttons.length; index++) ...[
+                      if (index > 0) const SizedBox(height: 10),
+                      buttons[index],
+                    ],
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: cancelButton),
+                    const SizedBox(width: 16),
+                    if (_isEditing) ...[
+                      Expanded(child: deleteButton),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(flex: 2, child: saveButton),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+}

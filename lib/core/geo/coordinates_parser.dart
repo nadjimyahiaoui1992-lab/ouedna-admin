@@ -8,7 +8,10 @@ class GeoPoint {
   const GeoPoint(this.latitude, this.longitude);
 
   bool get isValid =>
-      latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180;
 }
 
 /// أداة استخراج الإحداثيات من مدخلات المستخدم: رابط خرائط جوجل (كامل أو
@@ -74,8 +77,8 @@ class CoordinatesParser {
     }
 
     // ج) معاملات q= أو ll= أو daddr= في الرابط
-    final paramPattern =
-        RegExp(r'[?&](?:q|ll|daddr|query)=(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)');
+    final paramPattern = RegExp(
+        r'[?&](?:q|ll|daddr|query)=(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)');
     final paramMatch = paramPattern.firstMatch(text);
     if (paramMatch != null) {
       final p = _toPoint(paramMatch.group(1), paramMatch.group(2));
@@ -117,7 +120,8 @@ class CoordinatesParser {
         http.StreamedResponse response;
         try {
           final request = http.Request('GET', uri)..followRedirects = false;
-          response = await client.send(request).timeout(const Duration(seconds: 8));
+          response =
+              await client.send(request).timeout(const Duration(seconds: 8));
         } catch (_) {
           return null;
         }
@@ -127,14 +131,14 @@ class CoordinatesParser {
           await response.stream.drain<void>().catchError((_) {});
           if (location == null || location.isEmpty) return null;
           current = uri.resolve(location).toString();
-          final found = _extractFromText(current);
+          final found = _extractLocationFromText(_decodeUrlText(current));
           if (found != null) return found;
           continue;
         }
 
         // وصلنا لصفحة نهائية (وليست تحويلاً): افحص الرابط النهائي أولاً،
         // ثم محتوى الصفحة كحل أخير.
-        final fromFinalUrl = _extractFromText(current);
+        final fromFinalUrl = _extractLocationFromText(_decodeUrlText(current));
         if (fromFinalUrl != null) return fromFinalUrl;
 
         try {
@@ -152,13 +156,26 @@ class CoordinatesParser {
     }
   }
 
+  static GeoPoint? _extractLocationFromText(String text) {
+    return _extractFromText(text) ?? _extractPlusCode(text);
+  }
+
+  static String _decodeUrlText(String value) {
+    try {
+      return Uri.decodeFull(value);
+    } catch (_) {
+      return value;
+    }
+  }
+
   // ---------------------------------------------------------------------
   // Open Location Code (Plus Code)
   // ---------------------------------------------------------------------
 
   static GeoPoint? _extractPlusCode(String input) {
-    final pattern = '[${_plusCodeAlphabet}0]{2,8}\\+[$_plusCodeAlphabet]{0,3}';
-    final match = RegExp(pattern, caseSensitive: false).firstMatch(input.toUpperCase());
+    const pattern = '[${_plusCodeAlphabet}0]{2,8}\\+[$_plusCodeAlphabet]{0,3}';
+    final match =
+        RegExp(pattern, caseSensitive: false).firstMatch(input.toUpperCase());
     if (match == null) return null;
     final code = match.group(0)!;
     if (!_isValidPlusCode(code)) return null;
@@ -219,7 +236,8 @@ class CoordinatesParser {
       lngLo += col * colResolution;
     }
 
-    final point = GeoPoint(latLo + rowResolution / 2, lngLo + colResolution / 2);
+    final point =
+        GeoPoint(latLo + rowResolution / 2, lngLo + colResolution / 2);
     return point.isValid ? point : null;
   }
 

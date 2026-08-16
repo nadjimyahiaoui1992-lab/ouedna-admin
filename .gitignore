@@ -54,3 +54,35 @@ windows/flutter/ephemeral/
 
 # Fichiers temporaires de migrations locales
 /.tmp_*.json
+
+# Production and local delivery artifacts
+*.apk
+*.aab
+*.ipa
+*.zip
+*.tar
+*.tar.gz
+/artifacts/
+/backups/
+/reports/
+/screenshots/
+/coverage/
+/test-results/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.cer
+*.mobileprovision
+*.der
+*.secret
+*.credentials
+
+# Local IDE and OS metadata
+.vscode/
+*.code-workspace
+Thumbs.db

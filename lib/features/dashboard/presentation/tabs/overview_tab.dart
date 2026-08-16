@@ -104,6 +104,7 @@ class _OverviewTabState extends State<OverviewTab> {
       client.from('memories').select('id'),
       client.from('feedback').select('id'),
       client.from('suggestions').select('id,status'),
+      client.from('gallery').select('id'),
       _loadVerifiedAnalytics(client),
     ]);
 
@@ -114,7 +115,8 @@ class _OverviewTabState extends State<OverviewTab> {
     final memoriesCount = (responses[2] as List).length;
     final feedbackCount = (responses[3] as List).length;
     final inquiries = (responses[4] as List);
-    final analytics = responses[5] as Map<String, dynamic>?;
+    final galleryImages = (responses[5] as List).length;
+    final analytics = responses[6] as Map<String, dynamic>?;
     final pendingInquiries = inquiries
         .where((item) =>
             item['status']?.toString() == 'new' ||
@@ -124,8 +126,11 @@ class _OverviewTabState extends State<OverviewTab> {
     return _AdminSnapshot(
       totalPlaces: places.length,
       publishedPlaces: places.where((item) => item['status'] == 'منشور').length,
+      unpublishedPlaces:
+          places.where((item) => item['status'] != 'منشور').length,
       pendingPlaces:
           places.where((item) => item['status'] == 'قيد المراجعة').length,
+      galleryImages: galleryImages,
       pendingTestimonials: testimonials
           .where((item) => item['status']?.toString() != 'approved')
           .length,
@@ -189,7 +194,9 @@ class _AdminSnapshot {
   const _AdminSnapshot({
     required this.totalPlaces,
     required this.publishedPlaces,
+    required this.unpublishedPlaces,
     required this.pendingPlaces,
+    required this.galleryImages,
     required this.pendingTestimonials,
     required this.memories,
     required this.feedback,
@@ -208,7 +215,9 @@ class _AdminSnapshot {
 
   final int totalPlaces;
   final int publishedPlaces;
+  final int unpublishedPlaces;
   final int pendingPlaces;
+  final int galleryImages;
   final int pendingTestimonials;
   final int memories;
   final int feedback;
@@ -410,94 +419,126 @@ class _DashboardView extends StatelessWidget {
   }
 
   Widget _buildMetricsGrid(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.1,
-      children: [
-        _MetricCard(
-          title: 'إجمالي المعالم',
-          value: snapshot.totalPlaces.toString(),
-          icon: Icons.map_rounded,
-          color: const Color(0xFF193F38),
-          trend: '${snapshot.publishedPlaces} منشور',
-          onTap: () => onOpenSection(1),
-        ),
-        _MetricCard(
-          title: 'طلبات المراجعة',
-          value: snapshot.pendingPlaces.toString(),
-          icon: Icons.pending_actions_rounded,
-          color: const Color(0xFFD97706),
-          trend: 'معالم جديدة',
-          onTap: () => onOpenSection(1),
-          isAlert: snapshot.pendingPlaces > 0,
-        ),
-        _MetricCard(
-          title: 'تجارب الزوار',
-          value: snapshot.pendingTestimonials.toString(),
-          icon: Icons.reviews_rounded,
-          color: const Color(0xFF2563EB),
-          trend: 'بانتظار الموافقة',
-          onTap: () => onOpenSection(2),
-          isAlert: snapshot.pendingTestimonials > 0,
-        ),
-        _MetricCard(
-          title: 'صوت الزوار',
-          value: (snapshot.feedback + snapshot.pendingInquiries).toString(),
-          icon: Icons.forum_rounded,
-          color: const Color(0xFF7C3AED),
-          trend: '${snapshot.pendingInquiries} رسالة بانتظار المتابعة',
-          onTap: () => onOpenSection(4),
-          isAlert: snapshot.pendingInquiries > 0,
-        ),
-        _MetricCard(
-          title: 'تثبيتات موثقة',
-          value: snapshot.analyticsAvailable
-              ? snapshot.installations.toString()
-              : '—',
-          icon: Icons.install_mobile_rounded,
-          color: const Color(0xFF0F766E),
-          trend: snapshot.analyticsAvailable
-              ? '${snapshot.newInstallations30d} خلال 30 يوماً'
-              : 'يبدأ العد بعد النسخة الجديدة',
-          onTap: () {},
-        ),
-        _MetricCard(
-          title: 'نشط اليوم',
-          value: snapshot.analyticsAvailable
-              ? snapshot.dailyActiveUsers.toString()
-              : '—',
-          icon: Icons.bolt_rounded,
-          color: const Color(0xFF2563EB),
-          trend: snapshot.analyticsAvailable
-              ? '${snapshot.weeklyActiveUsers} نشط خلال 7 أيام'
-              : 'بانتظار أول فتح للتطبيق',
-          onTap: () {},
-        ),
-        _MetricCard(
-          title: 'تنزيلات الإصدار',
-          value: snapshot.analyticsAvailable
-              ? snapshot.githubAssetDownloads.toString()
-              : '—',
-          icon: Icons.cloud_download_rounded,
-          color: const Color(0xFFD97706),
-          trend: 'عدد تنزيل ملفات APK المنشورة',
-          onTap: () {},
-        ),
-        _MetricCard(
-          title: 'Firebase Analytics',
-          value: snapshot.firebaseAnalyticsReady ? 'GA4 متصل' : 'مفعّل',
-          icon: Icons.insights_rounded,
-          color: const Color(0xFF7C3AED),
-          trend: snapshot.firebaseAnalyticsReady
-              ? 'ملخصات النشاط والاحتفاظ داخل اللوحة'
-              : 'التقارير التفصيلية متاحة في Firebase Console',
-          onTap: () {},
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1100
+            ? 4
+            : constraints.maxWidth >= 700
+                ? 3
+                : 2;
+        final metrics = [
+          _MetricCard(
+            title: 'إجمالي المعالم',
+            value: snapshot.totalPlaces.toString(),
+            icon: Icons.map_rounded,
+            color: const Color(0xFF193F38),
+            trend: '${snapshot.publishedPlaces} منشور',
+            onTap: () => onOpenSection(1),
+          ),
+          _MetricCard(
+            title: 'غير منشور',
+            value: snapshot.unpublishedPlaces.toString(),
+            icon: Icons.visibility_off_outlined,
+            color: const Color(0xFFD97706),
+            trend: 'يحتاج مراجعة أو نشر',
+            onTap: () => onOpenSection(1),
+            isAlert: snapshot.unpublishedPlaces > 0,
+          ),
+          _MetricCard(
+            title: 'طلبات المراجعة',
+            value: snapshot.pendingPlaces.toString(),
+            icon: Icons.pending_actions_rounded,
+            color: const Color(0xFFB85E32),
+            trend: 'معالم جديدة',
+            onTap: () => onOpenSection(1),
+            isAlert: snapshot.pendingPlaces > 0,
+          ),
+          _MetricCard(
+            title: 'الصور',
+            value: snapshot.galleryImages.toString(),
+            icon: Icons.photo_library_outlined,
+            color: const Color(0xFF0F766E),
+            trend: 'صورة مرتبطة بالمعالم',
+            onTap: () => onOpenSection(1),
+          ),
+          _MetricCard(
+            title: 'تجارب الزوار',
+            value: snapshot.pendingTestimonials.toString(),
+            icon: Icons.reviews_rounded,
+            color: const Color(0xFF2563EB),
+            trend: 'بانتظار الموافقة',
+            onTap: () => onOpenSection(2),
+            isAlert: snapshot.pendingTestimonials > 0,
+          ),
+          _MetricCard(
+            title: 'صوت الزوار',
+            value: (snapshot.feedback + snapshot.pendingInquiries).toString(),
+            icon: Icons.forum_rounded,
+            color: const Color(0xFF7C3AED),
+            trend: '${snapshot.pendingInquiries} رسالة بانتظار المتابعة',
+            onTap: () => onOpenSection(4),
+            isAlert: snapshot.pendingInquiries > 0,
+          ),
+          _MetricCard(
+            title: 'الأرشيف',
+            value: snapshot.memories.toString(),
+            icon: Icons.auto_stories_outlined,
+            color: const Color(0xFF9A6B35),
+            trend: 'مادة تراثية محفوظة',
+            onTap: () => onOpenSection(3),
+          ),
+          _MetricCard(
+            title: 'تثبيتات موثقة',
+            value: snapshot.analyticsAvailable
+                ? snapshot.installations.toString()
+                : '—',
+            icon: Icons.install_mobile_rounded,
+            color: const Color(0xFF16805B),
+            trend: snapshot.analyticsAvailable
+                ? '${snapshot.newInstallations30d} خلال 30 يوماً'
+                : 'يبدأ العد بعد النسخة الجديدة',
+            onTap: () {},
+          ),
+          _MetricCard(
+            title: 'نشط اليوم',
+            value: snapshot.analyticsAvailable
+                ? snapshot.dailyActiveUsers.toString()
+                : '—',
+            icon: Icons.bolt_rounded,
+            color: const Color(0xFF2563EB),
+            trend: snapshot.analyticsAvailable
+                ? '${snapshot.weeklyActiveUsers} نشط خلال 7 أيام'
+                : 'بانتظار أول فتح للتطبيق',
+            onTap: () {},
+          ),
+          _MetricCard(
+            title: 'تنزيلات الإصدار',
+            value: snapshot.analyticsAvailable
+                ? snapshot.githubAssetDownloads.toString()
+                : '—',
+            icon: Icons.cloud_download_rounded,
+            color: const Color(0xFFD97706),
+            trend: 'عدد تنزيل ملفات APK المنشورة',
+            onTap: () {},
+          ),
+        ];
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: metrics.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 14,
+            crossAxisSpacing: 14,
+            childAspectRatio: columns >= 4
+                ? 1.22
+                : columns == 2
+                    ? 0.92
+                    : 1.08,
+          ),
+          itemBuilder: (_, index) => metrics[index],
+        );
+      },
     );
   }
 
@@ -661,53 +702,73 @@ class _MetricCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-                color:
-                    isAlert ? color.withOpacity(0.3) : const Color(0xFFE2EAE5)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact =
+                constraints.maxWidth < 190 || constraints.maxHeight < 150;
+            final padding = compact ? 14.0 : 20.0;
+            final iconSize = compact ? 24.0 : 28.0;
+            final valueSize = compact ? 24.0 : 28.0;
+            return Container(
+              padding: EdgeInsets.all(padding),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                    color: isAlert
+                        ? color.withOpacity(0.3)
+                        : const Color(0xFFE2EAE5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, color: color, size: 28),
-                  if (isAlert)
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                          color: Colors.red, shape: BoxShape.circle),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(icon, color: color, size: iconSize),
+                      if (isAlert)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                              color: Colors.red, shape: BoxShape.circle),
+                        ),
+                    ],
+                  ),
+                  const Spacer(),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                          fontSize: valueSize,
+                          fontWeight: FontWeight.w900,
+                          color: color),
                     ),
+                  ),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: compact ? 12 : 13,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF193F38)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    trend,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: compact ? 10 : 11,
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
-              const Spacer(),
-              Text(
-                value,
-                style: TextStyle(
-                    fontSize: 28, fontWeight: FontWeight.w900, color: color),
-              ),
-              Text(
-                title,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF193F38)),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                trend,
-                style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
