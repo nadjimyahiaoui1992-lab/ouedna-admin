@@ -634,63 +634,79 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   }
 
   Widget _buildActions() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-              ),
-              child: const Text('إلغاء',
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cancelButton = OutlinedButton(
+          onPressed: () => Navigator.pop(context),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text('إلغاء',
+              style: TextStyle(fontWeight: FontWeight.w900)),
+        );
+        final deleteButton = FilledButton.tonal(
+          onPressed: _isLoading ? null : _deletePlace,
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.red.shade50,
+            foregroundColor: Colors.red.shade700,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text('حذف المعلم',
+              style: TextStyle(fontWeight: FontWeight.w900)),
+        );
+        final saveButton = FilledButton(
+          onPressed: _isLoading ? null : _save,
+          style: FilledButton.styleFrom(
+            backgroundColor: _brandGreen,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      color: Colors.white, strokeWidth: 2),
+                )
+              : const Text('حفظ المعلم',
                   style: TextStyle(fontWeight: FontWeight.w900)),
-            ),
-          ),
-          const SizedBox(width: 16),
-          if (_isEditing) ...[
-            Expanded(
-              child: FilledButton.tonal(
-                onPressed: _isLoading ? null : _deletePlace,
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.red.shade50,
-                  foregroundColor: Colors.red.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
+        );
+        final buttons = <Widget>[
+          cancelButton,
+          if (_isEditing) deleteButton,
+          saveButton,
+        ];
+        final compact = constraints.maxWidth < 520;
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var index = 0; index < buttons.length; index++) ...[
+                      if (index > 0) const SizedBox(height: 10),
+                      buttons[index],
+                    ],
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(child: cancelButton),
+                    const SizedBox(width: 16),
+                    if (_isEditing) ...[
+                      Expanded(child: deleteButton),
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(flex: 2, child: saveButton),
+                  ],
                 ),
-                child: const Text('حذف المعلم',
-                    style: TextStyle(fontWeight: FontWeight.w900)),
-              ),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Expanded(
-            flex: 2,
-            child: FilledButton(
-              onPressed: _isLoading ? null : _save,
-              style: FilledButton.styleFrom(
-                backgroundColor: _brandGreen,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text('حفظ المعلم',
-                      style: TextStyle(fontWeight: FontWeight.w900)),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
