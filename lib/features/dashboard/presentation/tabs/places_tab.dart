@@ -13,6 +13,8 @@ class PlacesTab extends StatefulWidget {
 class _PlacesTabState extends State<PlacesTab> {
   late Future<List<Map<String, dynamic>>> _placesFuture;
   String? _statusFilter;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
   RealtimeChannel? _placesChannel;
   Timer? _reloadDebounce;
 
@@ -26,6 +28,7 @@ class _PlacesTabState extends State<PlacesTab> {
   @override
   void dispose() {
     _reloadDebounce?.cancel();
+    _searchController.dispose();
     if (_placesChannel != null) {
       Supabase.instance.client.removeChannel(_placesChannel!);
     }
@@ -166,9 +169,20 @@ class _PlacesTabState extends State<PlacesTab> {
           final allPlaces = snapshot.data ?? [];
           final pendingCount =
               allPlaces.where((p) => p['status'] == 'قيد المراجعة').length;
-          final filteredPlaces = _statusFilter == null
-              ? allPlaces
-              : allPlaces.where((p) => p['status'] == _statusFilter).toList();
+          final filteredPlaces = allPlaces.where((place) {
+            final matchesStatus =
+                _statusFilter == null || place['status'] == _statusFilter;
+            if (!matchesStatus || _searchQuery.isEmpty) return matchesStatus;
+            final haystack = [
+              place['name'],
+              place['main_category'],
+              place['sub_category'],
+              place['municipality'],
+              place['district'],
+              place['address'],
+            ].whereType<String>().join(' ').toLowerCase();
+            return haystack.contains(_searchQuery);
+          }).toList(growable: false);
 
           return Column(
             children: [
@@ -210,45 +224,86 @@ class _PlacesTabState extends State<PlacesTab> {
   }
 
   Widget _buildFilterBar(int pendingCount) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            _FilterChip(
-              label: 'الكل',
-              count: null,
-              selected: _statusFilter == null,
-              onTap: () => setState(() => _statusFilter = null),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            onChanged: (value) => setState(() {
+              _searchQuery = value.trim().toLowerCase();
+            }),
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(
+              hintText: 'ابحث بالاسم أو التصنيف أو البلدية...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _searchQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح البحث',
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Color(0xFFE2EAE5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Color(0xFFE2EAE5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Color(0xFF193F38)),
+              ),
             ),
-            const SizedBox(width: 8),
-            _FilterChip(
-              label: 'قيد المراجعة',
-              count: pendingCount,
-              selected: _statusFilter == 'قيد المراجعة',
-              color: const Color(0xFFD97706),
-              onTap: () => setState(() => _statusFilter = 'قيد المراجعة'),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _FilterChip(
+                  label: 'الكل',
+                  count: null,
+                  selected: _statusFilter == null,
+                  onTap: () => setState(() => _statusFilter = null),
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'قيد المراجعة',
+                  count: pendingCount,
+                  selected: _statusFilter == 'قيد المراجعة',
+                  color: const Color(0xFFD97706),
+                  onTap: () => setState(() => _statusFilter = 'قيد المراجعة'),
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'منشور',
+                  count: null,
+                  selected: _statusFilter == 'منشور',
+                  color: Colors.green,
+                  onTap: () => setState(() => _statusFilter = 'منشور'),
+                ),
+                const SizedBox(width: 8),
+                _FilterChip(
+                  label: 'مرفوض',
+                  count: null,
+                  selected: _statusFilter == 'مرفوض',
+                  color: Colors.red,
+                  onTap: () => setState(() => _statusFilter = 'مرفوض'),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            _FilterChip(
-              label: 'منشور',
-              count: null,
-              selected: _statusFilter == 'منشور',
-              color: Colors.green,
-              onTap: () => setState(() => _statusFilter = 'منشور'),
-            ),
-            const SizedBox(width: 8),
-            _FilterChip(
-              label: 'مرفوض',
-              count: null,
-              selected: _statusFilter == 'مرفوض',
-              color: Colors.red,
-              onTap: () => setState(() => _statusFilter = 'مرفوض'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -260,10 +315,12 @@ class _PlacesTabState extends State<PlacesTab> {
         const Icon(Icons.location_off_rounded,
             size: 64, color: Color(0xFFCBD5E1)),
         const SizedBox(height: 16),
-        const Center(
+        Center(
           child: Text(
-            'لا توجد معالم حالياً',
-            style: TextStyle(
+            _searchQuery.isEmpty
+                ? 'لا توجد معالم حالياً'
+                : 'لا توجد نتائج مطابقة',
+            style: const TextStyle(
                 fontWeight: FontWeight.w900, color: Color(0xFF64748B)),
           ),
         ),
