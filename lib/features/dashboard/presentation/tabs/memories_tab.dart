@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/media/image_upload_mime.dart';
+
 /// Ouedna admin archive workflow: photos are selected locally, previewed, then
 /// uploaded to the restricted `archive-images` bucket. No manual image URL is
 /// accepted by this screen.
@@ -885,21 +887,11 @@ class _ArchiveStorage {
   }
 
   static String _extension(String fileName) {
-    final lower = fileName.toLowerCase();
-    if (lower.endsWith('.png')) return 'png';
-    if (lower.endsWith('.webp')) return 'webp';
-    return 'jpg';
+    return ImageUploadMime.normalizedExtension(fileName);
   }
 
   static String _contentType(String extension) {
-    switch (extension) {
-      case 'png':
-        return 'image/png';
-      case 'webp':
-        return 'image/webp';
-      default:
-        return 'image/jpeg';
-    }
+    return ImageUploadMime.contentTypeForExtension(extension);
   }
 }
 

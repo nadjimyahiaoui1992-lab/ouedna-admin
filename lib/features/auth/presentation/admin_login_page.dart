@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -23,7 +22,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   }
 
   Future<void> _loadInstalledVersion() async {
-    _displayVersion = '2.0.2';
+    _displayVersion = '2.0.3';
     if (mounted) setState(() {});
   }
 

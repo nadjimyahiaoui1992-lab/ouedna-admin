@@ -2,7 +2,7 @@ name: ouedna_admin
 description: "لوحة التحكم الرسمية لمنظومة وادنا لإدارة المعالم ومحتوى المجتمع."
 publish_to: 'none'
 
-version: 2.0.2+21
+version: 2.0.3+22
 
 environment:
   sdk: ">=3.5.0 <4.0.0"

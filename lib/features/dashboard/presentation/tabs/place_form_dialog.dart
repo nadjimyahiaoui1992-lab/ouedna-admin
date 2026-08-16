@@ -1,9 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../../core/media/image_upload_mime.dart';
 
 class PlaceFormDialog extends StatefulWidget {
   final Map<String, dynamic>? place;
@@ -111,6 +114,43 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
     if (selected != null) _setPoint(selected);
   }
 
+  Future<void> _deletePlace() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تأكيد الحذف'),
+        content: const Text('هل أنت متأكد من حذف هذا المعلم نهائياً؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final client = Supabase.instance.client;
+      await client.from('places').delete().eq('id', widget.place!['id']);
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('خطأ أثناء الحذف: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final point = _pointFromFields();
@@ -133,15 +173,16 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
       if (_selectedImages.isNotEmpty) {
         final photo = _selectedImages.first;
         final bytes = await photo.readAsBytes();
-        final ext = photo.name.split('.').last.toLowerCase();
-        final safeExt = {'png', 'webp', 'jpg', 'jpeg'}.contains(ext) ? ext : 'jpg';
-        final fileName = 'places/${DateTime.now().millisecondsSinceEpoch}.$safeExt';
+        final safeExt = ImageUploadMime.normalizedExtension(photo.name);
+        final contentType = ImageUploadMime.contentTypeForExtension(safeExt);
+        final fileName =
+            'places/${DateTime.now().millisecondsSinceEpoch}.$safeExt';
 
-        await client.storage.from('archive-images').uploadBinary(
-          fileName,
-          bytes,
-          fileOptions: FileOptions(contentType: 'image/$safeExt', upsert: true),
-        );
+        await client.storage.from('images').uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: FileOptions(contentType: contentType, upsert: true),
+            );
         imageUrl = client.storage.from('archive-images').getPublicUrl(fileName);
       }
 
@@ -528,10 +569,16 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFE2EAE5)),
                   ),
-                  child: Image.memory(
-                    _selectedImages[index].bytesSync(),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(Icons.image_rounded, color: Colors.grey),
+                  child: FutureBuilder<Uint8List>(
+                    future: _selectedImages[index].readAsBytes(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.hasData) {
+                        return Image.memory(snapshot.data!, fit: BoxFit.cover);
+                      }
+                      return const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2));
+                    },
                   ),
                 ),
               ),
@@ -560,7 +607,25 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
             ),
           ),
           const SizedBox(width: 16),
+          if (_isEditing) ...[
+            Expanded(
+              child: FilledButton.tonal(
+                onPressed: _isLoading ? null : _deletePlace,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.red.shade50,
+                  foregroundColor: Colors.red.shade700,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
+                ),
+                child: const Text('حذف المعلم',
+                    style: TextStyle(fontWeight: FontWeight.w900)),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
           Expanded(
+            flex: 2,
             child: FilledButton(
               onPressed: _isLoading ? null : _save,
               style: FilledButton.styleFrom(
