@@ -1,11 +1,9 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
-import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/geo/coordinates_parser.dart';
 import '../../../../core/media/image_upload_mime.dart';
 
 class PlaceFormDialog extends StatefulWidget {
@@ -40,10 +38,12 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   late final TextEditingController _latController;
   late final TextEditingController _lngController;
   late final TextEditingController _phoneController;
+  final TextEditingController _linkController = TextEditingController();
 
   String _mainCategory = '';
   String _status = 'منشور';
   bool _isLoading = false;
+  bool _isResolvingLink = false;
 
   bool get _isEditing => widget.place != null;
 
@@ -77,6 +77,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
     _latController.dispose();
     _lngController.dispose();
     _phoneController.dispose();
+    _linkController.dispose();
     super.dispose();
   }
 
@@ -85,7 +86,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
     if (images.isNotEmpty) setState(() => _selectedImages.addAll(images));
   }
 
-  LatLng? _pointFromFields() {
+  GeoPoint? _pointFromFields() {
     final latitude =
         double.tryParse(_latController.text.trim().replaceAll(',', '.'));
     final longitude =
@@ -97,21 +98,45 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
         longitude > 180) {
       return null;
     }
-    return LatLng(latitude, longitude);
+    return GeoPoint(latitude, longitude);
   }
 
-  void _setPoint(LatLng point) {
+  void _setPoint(GeoPoint point) {
     _latController.text = point.latitude.toStringAsFixed(6);
     _lngController.text = point.longitude.toStringAsFixed(6);
     setState(() {});
   }
 
-  Future<void> _openMapPicker() async {
-    final selected = await showDialog<LatLng>(
-      context: context,
-      builder: (_) => _MapPickerDialog(initialPoint: _pointFromFields()),
-    );
-    if (selected != null) _setPoint(selected);
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    final text = data?.text;
+    if (text != null && text.trim().isNotEmpty) {
+      _linkController.text = text.trim();
+      setState(() {});
+    }
+  }
+
+  Future<void> _applyLocationInput() async {
+    final input = _linkController.text.trim();
+    if (input.isEmpty) return;
+    setState(() => _isResolvingLink = true);
+    try {
+      final point = await CoordinatesParser.parse(input);
+      if (!mounted) return;
+      if (point == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'تعذر التعرف على الموقع. تأكد من الرابط، أو الصق الإحداثيات مباشرة مثل: 33.3448, 6.8422'),
+        ));
+        return;
+      }
+      _setPoint(point);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('تم تحديد الموقع بدقة من المصدر المُدخل.'),
+      ));
+    } finally {
+      if (mounted) setState(() => _isResolvingLink = false);
+    }
   }
 
   Future<void> _deletePlace() async {
@@ -254,7 +279,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
                           _buildField('العنوان الكامل', _addressController,
                               Icons.location_on_rounded),
                           const SizedBox(height: 12),
-                          _buildMapPickerCard(),
+                          _buildLocationInputCard(),
                           const SizedBox(height: 16),
                           LayoutBuilder(
                             builder: (context, constraints) =>
@@ -427,30 +452,8 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
     );
   }
 
-  Widget _buildMapPickerCard() {
+  Widget _buildLocationInputCard() {
     final point = _pointFromFields();
-    final details = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('حدد موقع المعلم على الخريطة',
-            style: TextStyle(fontWeight: FontWeight.w900, color: _brandGreen)),
-        const SizedBox(height: 4),
-        Text(
-          point == null
-              ? 'اضغط على الخريطة ثم ضع الدبوس بدقة.'
-              : '${point.latitude.toStringAsFixed(5)}، ${point.longitude.toStringAsFixed(5)}',
-          style: const TextStyle(fontSize: 12, color: Colors.black54),
-        ),
-      ],
-    );
-    final action = FilledButton.icon(
-      onPressed: _openMapPicker,
-      icon: const Icon(Icons.map_outlined, size: 18),
-      label: Text(point == null ? 'فتح الخريطة' : 'تعديل'),
-      style: FilledButton.styleFrom(
-          backgroundColor: _brandGreen,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11)),
-    );
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
@@ -459,43 +462,84 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFD2E7DF)),
       ),
-      child: LayoutBuilder(
-        builder: (context, constraints) => constraints.maxWidth < 385
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(children: [
-                    Container(
-                        width: 46,
-                        height: 46,
-                        decoration: BoxDecoration(
-                            color: _brandGreen,
-                            borderRadius: BorderRadius.circular(14)),
-                        child: const Icon(Icons.pin_drop_rounded,
-                            color: Colors.white)),
-                    const SizedBox(width: 12),
-                    Expanded(child: details),
-                  ]),
-                  const SizedBox(height: 12),
-                  action,
-                ],
-              )
-            : Row(
-                children: [
-                  Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                          color: _brandGreen,
-                          borderRadius: BorderRadius.circular(14)),
-                      child: const Icon(Icons.pin_drop_rounded,
-                          color: Colors.white)),
-                  const SizedBox(width: 12),
-                  Expanded(child: details),
-                  const SizedBox(width: 8),
-                  action,
-                ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('الصق رابط من خرائط جوجل أو إحداثيات أو رمز موقع مفتوح',
+              style:
+                  TextStyle(fontWeight: FontWeight.w900, color: _brandGreen)),
+          const SizedBox(height: 4),
+          const Text(
+            'مثال: رابط https://maps.app.goo.gl/... أو 33.3448, 6.8422 أو رمز مثل V75V+8Q',
+            style: TextStyle(fontSize: 11.5, color: Colors.black54),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _linkController,
+                  minLines: 1,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'رابط الموقع أو الإحداثيات...',
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFD2E7DF)),
+                    ),
+                    prefixIcon: IconButton(
+                      tooltip: 'لصق من الحافظة',
+                      icon: const Icon(Icons.content_paste_rounded, size: 18),
+                      onPressed: _pasteFromClipboard,
+                    ),
+                  ),
+                ),
               ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: _isResolvingLink ? null : _applyLocationInput,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _brandGreen,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _isResolvingLink
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text('تطبيق',
+                        style: TextStyle(fontWeight: FontWeight.w900)),
+              ),
+            ],
+          ),
+          if (point != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.location_on_rounded,
+                    color: _brandGreen, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  '${point.latitude.toStringAsFixed(5)}، ${point.longitude.toStringAsFixed(5)}',
+                  style: const TextStyle(
+                      color: _brandGreen,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12.5),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -646,162 +690,6 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MapPickerDialog extends StatefulWidget {
-  const _MapPickerDialog({this.initialPoint});
-  final LatLng? initialPoint;
-
-  @override
-  State<_MapPickerDialog> createState() => _MapPickerDialogState();
-}
-
-class _MapPickerDialogState extends State<_MapPickerDialog> {
-  static const _brandGreen = Color(0xFF193F38);
-  static const _defaultElOued = LatLng(33.3683, 6.8674);
-  late LatLng _selectedPoint;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedPoint = widget.initialPoint ?? _defaultElOued;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final width = math.min(size.width - 28, 760.0);
-    final height = math.min(size.height - 80, 650.0);
-    return Dialog(
-      insetPadding: const EdgeInsets.all(14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        width: width,
-        height: height,
-        child: Column(
-          children: [
-            Container(
-              color: _brandGreen,
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              child: Row(
-                children: [
-                  const Icon(Icons.pin_drop_rounded, color: Colors.white),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'اختيار موقع المعلم',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 17),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon:
-                        const Icon(Icons.close_rounded, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Stack(
-                children: [
-                  FlutterMap(
-                    options: MapOptions(
-                      initialCenter: _selectedPoint,
-                      initialZoom: 13.5,
-                      onTap: (_, point) =>
-                          setState(() => _selectedPoint = point),
-                    ),
-                    children: [
-                      TileLayer(
-                        urlTemplate:
-                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        userAgentPackageName: 'com.ouedna.admin.v2',
-                      ),
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: _selectedPoint,
-                            width: 54,
-                            height: 64,
-                            child: const Column(
-                              children: [
-                                Icon(Icons.location_on_rounded,
-                                    color: Colors.red, size: 48),
-                                SizedBox(height: 1),
-                                Expanded(child: SizedBox()),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    right: 12,
-                    child: Card(
-                      margin: EdgeInsets.zero,
-                      color: Colors.white.withOpacity(0.94),
-                      child: const Padding(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        child: Text(
-                          'اضغط على أي نقطة في الخريطة لتحريك الدبوس، ثم أكد الموقع.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              color: Colors.white,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('الإحداثيات المحددة',
-                            style:
-                                TextStyle(fontSize: 11, color: Colors.black54)),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${_selectedPoint.latitude.toStringAsFixed(6)}، ${_selectedPoint.longitude.toStringAsFixed(6)}',
-                          style: const TextStyle(
-                              color: _brandGreen, fontWeight: FontWeight.w900),
-                        ),
-                      ],
-                    ),
-                  ),
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('إلغاء'),
-                  ),
-                  const SizedBox(width: 10),
-                  FilledButton.icon(
-                    onPressed: () => Navigator.pop(context, _selectedPoint),
-                    icon: const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('تأكيد الموقع'),
-                    style: FilledButton.styleFrom(backgroundColor: _brandGreen),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
