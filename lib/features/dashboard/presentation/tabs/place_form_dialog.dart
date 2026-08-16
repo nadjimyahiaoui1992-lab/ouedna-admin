@@ -10,8 +10,9 @@ import '../../../../core/media/image_upload_mime.dart';
 
 class PlaceFormDialog extends StatefulWidget {
   final Map<String, dynamic>? place;
+  final TileProvider? tileProvider;
 
-  const PlaceFormDialog({super.key, this.place});
+  const PlaceFormDialog({super.key, this.place, this.tileProvider});
 
   @override
   State<PlaceFormDialog> createState() => _PlaceFormDialogState();
@@ -331,15 +332,18 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
         children: [
           const Icon(Icons.add_location_alt_rounded, color: Colors.white),
           const SizedBox(width: 12),
-          Text(
-            _isEditing ? 'تعديل المعلم' : 'إضافة معلم جديد',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 18,
+          Expanded(
+            child: Text(
+              _isEditing ? 'تعديل المعلم' : 'إضافة معلم جديد',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 18,
+              ),
             ),
           ),
-          const Spacer(),
           IconButton(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.close_rounded, color: Colors.white70),
@@ -401,6 +405,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
   Widget _buildCategoryDropdown() {
     return DropdownButtonFormField<String>(
       value: _mainCategory,
+      isExpanded: true,
       decoration: InputDecoration(
         labelText: 'التصنيف الرئيسي',
         prefixIcon: const Icon(Icons.category_rounded, size: 20),
@@ -440,23 +445,19 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
             style: TextStyle(fontSize: 11.5, color: Colors.black54),
           ),
           const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildLocationMethodChip(_LocationMethod.coordinates,
-                    Icons.pin_drop_outlined, 'الإحداثيات'),
-                const SizedBox(width: 8),
-                _buildLocationMethodChip(_LocationMethod.googleMaps,
-                    Icons.link_rounded, 'Google Maps'),
-                const SizedBox(width: 8),
-                _buildLocationMethodChip(_LocationMethod.plusCode,
-                    Icons.add_location_alt_outlined, 'Plus Code'),
-                const SizedBox(width: 8),
-                _buildLocationMethodChip(
-                    _LocationMethod.map, Icons.map_outlined, 'من الخريطة'),
-              ],
-            ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildLocationMethodChip(_LocationMethod.coordinates,
+                  Icons.pin_drop_outlined, 'الإحداثيات'),
+              _buildLocationMethodChip(_LocationMethod.googleMaps,
+                  Icons.link_rounded, 'Google Maps'),
+              _buildLocationMethodChip(_LocationMethod.plusCode,
+                  Icons.add_location_alt_outlined, 'Plus Code'),
+              _buildLocationMethodChip(
+                  _LocationMethod.map, Icons.map_outlined, 'من الخريطة'),
+            ],
           ),
           const SizedBox(height: 14),
           switch (_locationMethod) {
@@ -614,7 +615,10 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: widget.tileProvider == null
+                      ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+                      : 'assets/branding/icon.png',
+                  tileProvider: widget.tileProvider,
                   userAgentPackageName: 'dz.ouedna.admin',
                 ),
                 if (point != null)

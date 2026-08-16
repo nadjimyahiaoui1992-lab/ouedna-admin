@@ -131,14 +131,14 @@ class CoordinatesParser {
           await response.stream.drain<void>().catchError((_) {});
           if (location == null || location.isEmpty) return null;
           current = uri.resolve(location).toString();
-          final found = _extractFromText(current);
+          final found = _extractLocationFromText(_decodeUrlText(current));
           if (found != null) return found;
           continue;
         }
 
         // وصلنا لصفحة نهائية (وليست تحويلاً): افحص الرابط النهائي أولاً،
         // ثم محتوى الصفحة كحل أخير.
-        final fromFinalUrl = _extractFromText(current);
+        final fromFinalUrl = _extractLocationFromText(_decodeUrlText(current));
         if (fromFinalUrl != null) return fromFinalUrl;
 
         try {
@@ -153,6 +153,18 @@ class CoordinatesParser {
       return null;
     } finally {
       client.close();
+    }
+  }
+
+  static GeoPoint? _extractLocationFromText(String text) {
+    return _extractFromText(text) ?? _extractPlusCode(text);
+  }
+
+  static String _decodeUrlText(String value) {
+    try {
+      return Uri.decodeFull(value);
+    } catch (_) {
+      return value;
     }
   }
 
