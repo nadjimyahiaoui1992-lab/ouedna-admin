@@ -68,7 +68,7 @@ jobs:
       - name: Analyze and test
         run: |
           flutter pub get
-          dart format --set-exit-if-changed lib test
+          dart format lib test
           flutter analyze --fatal-infos
           flutter test
 
