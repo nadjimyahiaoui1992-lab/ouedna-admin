@@ -183,7 +183,7 @@ class _PlaceFormDialogState extends State<PlaceFormDialog> {
               bytes,
               fileOptions: FileOptions(contentType: contentType, upsert: true),
             );
-        imageUrl = client.storage.from('archive-images').getPublicUrl(fileName);
+        imageUrl = client.storage.from('images').getPublicUrl(fileName);
       }
 
       final data = {
